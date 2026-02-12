@@ -1,0 +1,11 @@
+services:
+  vibehist-build:
+    build:
+      context: .
+    image: vibehist:${IMAGE_TAG:-latest}
+
+  vibehist-run:
+    image: vibehist:${IMAGE_TAG:-latest}
+    volumes:
+      - .:/app/vibehist
+    command: tail -f /dev/null

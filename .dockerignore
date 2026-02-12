@@ -1,0 +1,15 @@
+# Git
+.git
+.gitattributes
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+
+# Jetbrains
+.idea
+
+# Poetry configuration
+poetry.toml
+.venv
