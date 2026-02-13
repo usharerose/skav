@@ -118,7 +118,7 @@ class JsonFormatter(Formatter):
         time_zone = ct.strftime("%z")
         time_zone = time_zone[:-2] + ":" + time_zone[-2:]
         time_str = ct.strftime("%Y-%m-%dT%H:%M:%S")
-        return f"{time_str}.{record.msecs:03d}{time_zone}"
+        return f"{time_str}.{int(record.msecs):03d}{time_zone}"
 
 
 def config_logging(
