@@ -1,0 +1,19 @@
+{
+  "session_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "transcript_path": "/path/to/transcript/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jsonl",
+  "cwd": "/path/to/repository",
+  "permission_mode": "default",
+  "hook_event_name": "PermissionRequest",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "/path/to/repository/test.md",
+    "content": "# Try to write Markdown\n\nNo effective content\n"
+  },
+  "permission_suggestions": [
+    {
+      "type": "setMode",
+      "mode": "acceptEdits",
+      "destination": "session"
+    }
+  ]
+}

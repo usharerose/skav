@@ -1,0 +1,11 @@
+{
+  "session_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "transcript_path": "/path/to/transcript/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jsonl",
+  "cwd": "/path/to/repository",
+  "permission_mode": "default",
+  "hook_event_name": "SubagentStop",
+  "stop_hook_active": false,
+  "agent_id": "abe1b03",
+  "agent_transcript_path": "/path/to/transcript/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/subagents/agent-abe1b03.jsonl",
+  "agent_type": ""
+}

@@ -11,6 +11,16 @@ python = ">=3.10"
 typing-extensions = { version = "4.15.0", python = "<3.11" }
 
 
+[tool.poetry.group.dev.dependencies]
+pytest = "9.0.2"
+pytest-cov = "7.0.0"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = "."
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

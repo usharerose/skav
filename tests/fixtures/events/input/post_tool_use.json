@@ -1,0 +1,22 @@
+{
+  "session_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "transcript_path": "/path/to/transcript/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jsonl",
+  "cwd": "/path/to/repository",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "/path/to/repository/file.py"
+  },
+  "tool_response": {
+    "type": "text",
+    "file": {
+      "filePath": "/path/to/repository/file.py",
+      "content": "#!/usr/bin/env python3\n\"\"\"\nDemo file\nNo effective content\n\"\"\"\n",
+      "numLines": 6,
+      "startLine": 1,
+      "totalLines": 6
+    }
+  },
+  "tool_use_id": "call_xxxxxxxxxxxxxxxxxxxxxxxx"
+}
