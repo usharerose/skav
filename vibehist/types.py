@@ -4,7 +4,7 @@ Type definitions for Claude Code Hook events
 Based on official documentation: https://code.claude.com/docs/en/hooks
 """
 import sys
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 if sys.version_info >= (3, 11):
     from typing import NotRequired, TypedDict
@@ -93,8 +93,11 @@ class ToolGrepInput(TypedDict):
         "files_with_matches",
         "count",
     ]
-    NotRequired["-i"]: Optional[bool]
     multiline: Optional[bool]
+
+
+# Define "-i" key outside class body to bypass Python syntax limitations
+ToolGrepInput.__annotations__["-i"] = NotRequired[Optional[bool]]
 
 
 class ToolWebFetchInput(TypedDict):
@@ -162,14 +165,14 @@ class EventPermissionRequestInput(EventCommonInput):
 
     tool_name: str
     tool_input: ToolInput
-    permission_suggestions: Optional[List[Dict]]
+    permission_suggestions: Optional[List[Dict[str, Any]]]
 
 
 class EventPostToolUseInput(EventCommonInput):
 
     tool_name: str
     tool_input: ToolInput
-    tool_response: Dict
+    tool_response: Dict[str, Any]
     tool_use_id: str
 
 

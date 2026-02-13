@@ -12,6 +12,7 @@ typing-extensions = { version = "4.15.0", python = "<3.11" }
 
 
 [tool.poetry.group.dev.dependencies]
+mypy = "1.19.1"
 pytest = "9.0.2"
 pytest-cov = "7.0.0"
 
@@ -19,6 +20,13 @@ pytest-cov = "7.0.0"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = "."
+
+
+[tool.mypy]
+python_version = "3.11"     # Target Python version
+strict = true                # Enable strict type checking
+warn_return_any = true      # Warn about functions returning Any
+warn_unused_ignores = true  # Warn about unused # type: ignore comments
 
 
 [build-system]

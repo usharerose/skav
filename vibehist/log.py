@@ -85,14 +85,14 @@ class JsonFormatter(Formatter):
     # pylint: disable=super-init-not-called
     def __init__(
         self,
-        fmt: Optional[Sequence] = None,
+        fmt: Optional[Sequence[str]] = None,
         datefmt: Optional[str] = None,
     ):
         if fmt and not isinstance(fmt, (tuple, list)):
             raise TypeError(
                 f"fmt param must be tuple or list type, current type: {type(fmt)}",
             )
-        self._fmt: Sequence = fmt or self.fmt_fields  # type: ignore[assignment]
+        self._fmt: Sequence[str] = fmt or self.fmt_fields  # type: ignore[assignment]
         self._datefmt: Optional[str] = datefmt
 
     def _get_exception_text(self, record: LogRecord) -> str:
