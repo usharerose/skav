@@ -37,6 +37,13 @@ def main(debug: bool = False) -> None:
     sys.exit(0)
 
 
-if __name__ == "__main__":
+def cli() -> None:
+    """
+    CLI entrypoint
+    """
     cmd_args = parse_cmd_args()
     main(debug=cmd_args.debug)
+
+
+if __name__ == "__main__":
+    cli()

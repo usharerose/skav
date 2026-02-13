@@ -6,6 +6,9 @@ authors = ["Chaojie Yan <ushareroses@gmail.com>"]
 readme = "README.md"
 packages = [{include = "vibehist"}]
 
+[tool.poetry.scripts]
+vibehist = "vibehist.app:cli"
+
 [tool.poetry.dependencies]
 python = ">=3.10"
 typing-extensions = { version = "4.15.0", python = "<3.11" }
