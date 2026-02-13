@@ -3,15 +3,14 @@
 System logger configurations
 User only needs to call "config_logging" before logging
 """
-from collections import OrderedDict
+
 import copy
 import datetime
 import json
+from collections import OrderedDict
+from collections.abc import Sequence
 from logging import Filter, Formatter, LogRecord
 from logging.config import dictConfig
-from typing import Optional, Sequence
-from zoneinfo import ZoneInfo
-
 
 __all__ = ["config_logging"]
 
@@ -25,45 +24,33 @@ DEFAULT_LOG_CONFIG_DICT = {
                 "%(asctime)s | %(service_name)s | %(process)d | %(levelname)s "
                 "| +%(lineno)d %(name)s |> %(message)s"
             ),
-            "datefmt": "%Y-%m-%d %H:%M:%S"
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         },
-        "json": {
-            "()": "vibehist.log.JsonFormatter"
-        }
+        "json": {"()": "vibehist.log.JsonFormatter"},
     },
-    "filters": {
-        "service_name_filter": {
-            "()": "vibehist.log.ServiceNameFilter"
-        }
-    },
+    "filters": {"service_name_filter": {"()": "vibehist.log.ServiceNameFilter"}},
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "json",
             "stream": "ext://sys.stdout",
-            "filters": ["service_name_filter"]
+            "filters": ["service_name_filter"],
         },
         "plain": {
             "class": "logging.StreamHandler",
             "formatter": "default",
             "stream": "ext://sys.stderr",
-            "filters": ["service_name_filter"]
-        }
+            "filters": ["service_name_filter"],
+        },
     },
-    "loggers": {
-        "": {
-            "handlers": ["console"],
-            "level": "INFO"
-        }
-    }
+    "loggers": {"": {"handlers": ["console"], "level": "INFO"}},
 }
 
 
 class ServiceNameFilter(Filter):
-
-    def __init__(self, service_name: Optional[str] = None):
-        super(ServiceNameFilter, self).__init__()
-        self._service_name: Optional[str] = service_name
+    def __init__(self, service_name: str | None = None):
+        super().__init__()
+        self._service_name: str | None = service_name
 
     def filter(self, record: LogRecord) -> bool:
         record.service_name = self._service_name if self._service_name else "unknown"
@@ -71,7 +58,6 @@ class ServiceNameFilter(Filter):
 
 
 class JsonFormatter(Formatter):
-
     fmt_fields: Sequence[str] = (
         "asctime",
         "service_name",
@@ -79,21 +65,21 @@ class JsonFormatter(Formatter):
         "levelname",
         "lineno",
         "name",
-        "message"
+        "message",
     )
 
     # pylint: disable=super-init-not-called
     def __init__(
         self,
-        fmt: Optional[Sequence[str]] = None,
-        datefmt: Optional[str] = None,
+        fmt: Sequence[str] | None = None,
+        datefmt: str | None = None,
     ):
         if fmt and not isinstance(fmt, (tuple, list)):
             raise TypeError(
                 f"fmt param must be tuple or list type, current type: {type(fmt)}",
             )
         self._fmt: Sequence[str] = fmt or self.fmt_fields  # type: ignore[assignment]
-        self._datefmt: Optional[str] = datefmt
+        self._datefmt: str | None = datefmt
 
     def _get_exception_text(self, record: LogRecord) -> str:
         if record.exc_info:
@@ -125,18 +111,18 @@ class JsonFormatter(Formatter):
 
         return json.dumps(result, ensure_ascii=False)
 
-    def formatTime(self, record: LogRecord, datefmt: Optional[str] = None) -> str:
+    def formatTime(self, record: LogRecord, datefmt: str | None = None) -> str:
         ct = datetime.datetime.fromtimestamp(record.created, None)
         if datefmt:
             return ct.strftime(datefmt)
         time_zone = ct.strftime("%z")
         time_zone = time_zone[:-2] + ":" + time_zone[-2:]
         time_str = ct.strftime("%Y-%m-%dT%H:%M:%S")
-        return "%s.%03d%s" % (time_str, record.msecs, time_zone)
+        return f"{time_str}.{record.msecs:03d}{time_zone}"
 
 
 def config_logging(
-    service_name: Optional[str] = None,
+    service_name: str | None = None,
     debug: bool = False,
 ) -> None:
     """

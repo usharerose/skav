@@ -3,6 +3,7 @@
 Claude Code Hook Events Handler
 A generic hook handler that can process all Claude Code hook events
 """
+
 import argparse
 import json
 import logging
@@ -10,7 +11,6 @@ import sys
 
 from .log import config_logging
 from .types import EventInput
-
 
 logger = logging.getLogger(__name__)
 

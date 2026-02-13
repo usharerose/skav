@@ -2,9 +2,9 @@
 """
 Unit tests for vibehist.app module
 """
+
 import io
 import json
-from typing import Dict
 
 import pytest
 
@@ -12,7 +12,6 @@ from vibehist.app import main, parse_cmd_args
 
 
 class TestParseCmdArgs:
-
     def test_parse_default_args(
         self,
         monkeypatch: pytest.MonkeyPatch,
@@ -31,10 +30,9 @@ class TestParseCmdArgs:
 
 
 class TestMain:
-
     def test_main_with_session_start_event(
         self,
-        session_start_event_input: Dict,
+        session_start_event_input: dict,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         mock_stdin = io.StringIO(json.dumps(session_start_event_input))
@@ -52,7 +50,7 @@ class TestMain:
 
     def test_main_with_user_prompt_event(
         self,
-        user_prompt_event_input: Dict,
+        user_prompt_event_input: dict,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         mock_stdin = io.StringIO(json.dumps(user_prompt_event_input))
@@ -113,7 +111,7 @@ class TestMain:
 
     def test_main_with_pre_tool_use_event(
         self,
-        pre_tool_use_event_input: Dict,
+        pre_tool_use_event_input: dict,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         mock_stdin = io.StringIO(json.dumps(pre_tool_use_event_input))
@@ -131,7 +129,7 @@ class TestMain:
 
     def test_main_with_permission_request_event(
         self,
-        permission_request_event_input: Dict,
+        permission_request_event_input: dict,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         mock_stdin = io.StringIO(json.dumps(permission_request_event_input))
@@ -149,7 +147,7 @@ class TestMain:
 
     def test_main_with_post_tool_use_event(
         self,
-        post_tool_use_event_input: Dict,
+        post_tool_use_event_input: dict,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         mock_stdin = io.StringIO(json.dumps(post_tool_use_event_input))
@@ -167,7 +165,7 @@ class TestMain:
 
     def test_main_with_subagent_stop_event(
         self,
-        subagent_stop_event_input: Dict,
+        subagent_stop_event_input: dict,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         mock_stdin = io.StringIO(json.dumps(subagent_stop_event_input))
@@ -185,7 +183,7 @@ class TestMain:
 
     def test_main_with_stop_event(
         self,
-        stop_event_input: Dict,
+        stop_event_input: dict,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         mock_stdin = io.StringIO(json.dumps(stop_event_input))

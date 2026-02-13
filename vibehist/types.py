@@ -3,29 +3,24 @@
 Type definitions for Claude Code Hook events
 Based on official documentation: https://code.claude.com/docs/en/hooks
 """
+
 import sys
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 if sys.version_info >= (3, 11):
-    from typing import NotRequired, TypedDict
+    from typing import TypedDict
 else:
-    from typing_extensions import NotRequired, TypedDict
-
+    from typing_extensions import TypedDict
 
 
 class EventCommonInput(TypedDict, total=False):
-
     session_id: str
     transcript_path: str
     cwd: str
     # permission_mode is documented but NOT actually present in some cases
-    permission_mode: Optional[Literal[
-        "default",
-        "plan",
-        "acceptEdits",
-        "dontAsk",
-        "bypassPermissions",
-    ]]
+    permission_mode: (
+        Literal["default", "plan", "acceptEdits", "dontAsk", "bypassPermissions"] | None
+    )
     hook_event_name: Literal[
         "SessionStart",
         "UserPromptSubmit",
@@ -48,77 +43,69 @@ class EventCommonInput(TypedDict, total=False):
 # Tool Input Types
 # =================
 
-class ToolBashInput(TypedDict):
 
+class ToolBashInput(TypedDict):
     command: str
-    description: Optional[str]
-    timeout: Optional[int]
-    run_in_background: Optional[bool]
+    description: str | None
+    timeout: int | None
+    run_in_background: bool | None
 
 
 class ToolWriteInput(TypedDict):
-
     file_path: str
     content: str
 
 
 class ToolEditInput(TypedDict):
-
     file_path: str
     old_string: str
     new_string: str
-    replace_all: Optional[bool]
+    replace_all: bool | None
 
 
 class ToolReadInput(TypedDict):
-
     file_path: str
-    offset: Optional[int]
-    limit: Optional[int]
+    offset: int | None
+    limit: int | None
 
 
 class ToolGlobInput(TypedDict):
-
     pattern: str
-    path: Optional[str]
+    path: str | None
 
 
 class ToolGrepInput(TypedDict):
-
     pattern: str
-    path: Optional[str]
-    glob: Optional[str]
+    path: str | None
+    glob: str | None
     output_mode: Literal[
         "content",
         "files_with_matches",
         "count",
     ]
-    multiline: Optional[bool]
+    multiline: bool | None
 
 
 # Define "-i" key outside class body to bypass Python syntax limitations
-ToolGrepInput.__annotations__["-i"] = NotRequired[Optional[bool]]
+ToolGrepInput.__annotations__["-i"] = bool | None
 
 
 class ToolWebFetchInput(TypedDict):
-
     url: str
-    prompt: Optional[str]
+    prompt: str | None
 
 
 class ToolWebSearchInput(TypedDict):
-
     query: str
-    allowed_domains: Optional[list[str]]
-    blocked_domains: Optional[list[str]]
+    allowed_domains: list[str] | None
+    blocked_domains: list[str] | None
 
 
 class ToolTaskInput(TypedDict):
-
     prompt: str
-    description: Optional[str]
-    subagent_type: Optional[str]
-    model: Optional[str]
+    description: str | None
+    subagent_type: str | None
+    model: str | None
 
 
 class ToolCustomInput(TypedDict): ...
@@ -142,53 +129,46 @@ ToolInput = (
 # Hook Event Input Types
 # ============================================================================
 class EventSessionStartInput(EventCommonInput):
-
     source: Literal["startup", "resume", "clear", "compact"]
     model: str
     # agent_type is only present when using --agent flag
-    agent_type: Optional[str]
+    agent_type: str | None
 
 
 class EventUserPromptSubmitInput(EventCommonInput):
-
     prompt: str
 
 
 class EventPreToolUseInput(EventCommonInput):
-
     tool_name: str
     tool_input: ToolInput
     tool_use_id: str
 
 
 class EventPermissionRequestInput(EventCommonInput):
-
     tool_name: str
     tool_input: ToolInput
-    permission_suggestions: Optional[List[Dict[str, Any]]]
+    permission_suggestions: list[dict[str, Any]] | None
 
 
 class EventPostToolUseInput(EventCommonInput):
-
     tool_name: str
     tool_input: ToolInput
-    tool_response: Dict[str, Any]
+    tool_response: dict[str, Any]
     tool_use_id: str
 
 
 class EventPostToolUseFailureInput(EventCommonInput):
-
     tool_name: str
     tool_input: ToolInput
     tool_use_id: str
     error: str
-    is_interrupt: Optional[bool]
+    is_interrupt: bool | None
 
 
 class EventNotificationInput(EventCommonInput):
-
     message: str
-    title: Optional[str]
+    title: str | None
     notification_type: Literal[
         "permission_prompt",
         "idle_prompt",
@@ -198,13 +178,11 @@ class EventNotificationInput(EventCommonInput):
 
 
 class EventSubagentStartInput(EventCommonInput):
-
     agent_id: str
     agent_type: str
 
 
 class EventSubagentStopInput(EventCommonInput):
-
     stop_hook_active: bool
     agent_id: str
     agent_type: str
@@ -212,33 +190,28 @@ class EventSubagentStopInput(EventCommonInput):
 
 
 class EventStopInput(EventCommonInput):
-
     stop_hook_active: bool
 
 
 class EventTeammateIdleInput(EventCommonInput):
-
     teammate_name: str
     team_name: str
 
 
 class EventTaskCompletedInput(EventCommonInput):
-
     task_id: str
     task_subject: str
-    task_description: Optional[str]
-    teammate_name: Optional[str]
-    team_name: Optional[str]
+    task_description: str | None
+    teammate_name: str | None
+    team_name: str | None
 
 
 class EventPreCompactInput(EventCommonInput):
-
     trigger: Literal["manual", "auto"]
     custom_instructions: str
 
 
 class EventSessionEndInput(EventCommonInput):
-
     reason: Literal[
         "clear",
         "logout",

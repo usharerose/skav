@@ -2,6 +2,7 @@
 """
 Unit tests for vibehist.log module
 """
+
 import json
 import logging
 
@@ -11,7 +12,6 @@ from vibehist.log import JsonFormatter, ServiceNameFilter, config_logging
 
 
 class TestServiceNameFilter:
-
     def test_filter_injects_service_name(self) -> None:
         filter_instance = ServiceNameFilter(service_name="test-service")
         record = logging.LogRecord(
@@ -43,7 +43,6 @@ class TestServiceNameFilter:
 
 
 class TestJsonFormatter:
-
     def test_format_basic_log_record(self) -> None:
         formatter = JsonFormatter()
         record = logging.LogRecord(
@@ -139,7 +138,6 @@ ValueError: test error
 
 
 class TestConfigLogging:
-
     def test_config_logging_with_service_name(
         self,
         caplog: pytest.LogCaptureFixture,
