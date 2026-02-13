@@ -1,0 +1,8 @@
+{
+  "session_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "transcript_path": "/path/to/transcript/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jsonl",
+  "cwd": "/path/to/repository",
+  "permission_mode": "default",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false
+}

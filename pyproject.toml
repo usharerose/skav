@@ -6,8 +6,52 @@ authors = ["Chaojie Yan <ushareroses@gmail.com>"]
 readme = "README.md"
 packages = [{include = "vibehist"}]
 
+[tool.poetry.scripts]
+vibehist = "vibehist.app:cli"
+
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10"
+typing-extensions = { version = "4.15.0", python = "<3.11" }
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "1.19.1"
+pytest = "9.0.2"
+pytest-cov = "7.0.0"
+ruff = "0.15.1"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = "."
+
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+# E - pycodestyle errors
+# F - pyflakes (logical errors)
+# I - isort (import sorting)
+# W - pycodestyle warnings
+# UP - pyupgrade (modernize Python syntax)
+select = ["E", "F", "I", "W", "UP"]
+ignore = ["E501"]  # Ignore line-length (handled by formatter)
+
+[tool.ruff.lint.isort]
+known-first-party = ["vibehist"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
 
 
 [build-system]
