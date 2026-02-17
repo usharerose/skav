@@ -5,6 +5,8 @@ Claude Code Project Path
 
 import os
 
+from ..utils import normalize_path
+
 
 class ProjectStoragePath:
     """
@@ -19,7 +21,7 @@ class ProjectStoragePath:
         if not storage_name.startswith("-"):
             raise ValueError(f"Storage name must start with '-': {storage_name}")
         self._storage_name = storage_name
-        self._workspace_path = self.normalize_abspath(workspace_path)
+        self._workspace_path = normalize_path(workspace_path)
         self._path = os.path.join(self._workspace_path, self._storage_name)
 
     @classmethod
@@ -41,18 +43,9 @@ class ProjectStoragePath:
         :return: a ProjectStoragePath object
         :rtype: ProjectStoragePath
         """
-        project_abspath = cls.normalize_abspath(str(project_dir))
+        project_abspath = normalize_path(str(project_dir))
         storage_name = cls.abspath_to_storage_name(project_abspath)
         return cls(storage_name, workspace_path)
-
-    @staticmethod
-    def normalize_abspath(path: str | os.PathLike[str]) -> str:
-        epath = os.fspath(path)
-        epath = os.path.expanduser(epath)
-        epath = os.path.expandvars(epath)
-        epath = os.path.abspath(epath)
-        epath = os.path.normpath(epath)
-        return epath
 
     @staticmethod
     def abspath_to_storage_name(abspath: str) -> str:
