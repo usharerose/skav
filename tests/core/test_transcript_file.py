@@ -449,3 +449,226 @@ class TestTranscriptFileEdgeCases:
         items = list(tf.iter_items())
 
         assert items == []
+
+
+class TestTranscriptFileIdentifiers:
+    def test_extract_identifiers_session_only(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "550e8400-e29b-41d4-a716-446655440000"
+        file_path = tmp_path / f"{session_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert tf.agent_id is None
+        assert tf.is_subagent is False
+
+    def test_extract_identifiers_subagent(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "550e8400-e29b-41d4-a716-446655440000"
+        agent_id = "task-12345"
+        subagent_dir = tmp_path / session_id / "subagents"
+        subagent_dir.mkdir(parents=True)
+        file_path = subagent_dir / f"agent-{agent_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert tf.agent_id == agent_id
+        assert tf.is_subagent is True
+
+    def test_extract_identifiers_nested_path(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        nested_dir = tmp_path / "some" / "deep" / "path"
+        nested_dir.mkdir(parents=True)
+        file_path = nested_dir / f"{session_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert tf.agent_id is None
+        assert tf.is_subagent is False
+
+    def test_extract_identifiers_invalid_uuid_format(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "not-a-uuid.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id is None
+        assert tf.agent_id is None
+        assert tf.is_subagent is False
+
+    def test_extract_identifiers_partial_uuid(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "550e8400-e29b-41d4.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id is None
+        assert tf.agent_id is None
+
+    def test_extract_identifiers_empty_agent_id(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "550e8400-e29b-41d4-a716-446655440000"
+        subagent_dir = tmp_path / session_id / "subagents"
+        subagent_dir.mkdir(parents=True)
+        file_path = subagent_dir / "agent-.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert tf.agent_id == ""
+        assert tf.is_subagent is True
+
+    def test_session_id_property(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "12345678-1234-1234-1234-123456789abc"
+        file_path = tmp_path / f"{session_id}.jsonl"
+        file_path.write_text('{"type": "user"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert isinstance(tf.session_id, str)
+
+    def test_session_id_property_none(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "simple-name.jsonl"
+        file_path.write_text('{"type": "user"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id is None
+
+    def test_agent_id_property(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "99999999-9999-9999-9999-999999999999"
+        agent_id = "bash-executor"
+        subagent_dir = tmp_path / session_id / "subagents"
+        subagent_dir.mkdir(parents=True)
+        file_path = subagent_dir / f"agent-{agent_id}.jsonl"
+        file_path.write_text('{"type": "assistant"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.agent_id == agent_id
+        assert isinstance(tf.agent_id, str)
+
+    def test_agent_id_property_none_for_main_session(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "11111111-2222-3333-4444-555555555555"
+        file_path = tmp_path / f"{session_id}.jsonl"
+        file_path.write_text('{"type": "user"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.agent_id is None
+
+    def test_is_subagent_property_true(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        agent_id = "test-agent"
+        subagent_dir = tmp_path / session_id / "subagents"
+        subagent_dir.mkdir(parents=True)
+        file_path = subagent_dir / f"agent-{agent_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.is_subagent is True
+
+    def test_is_subagent_property_false(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "bbbbbbbb-cccc-dddd-eeee-ffffffffffff"
+        file_path = tmp_path / f"{session_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.is_subagent is False
+
+    def test_is_subagent_property_false_no_uuid(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "random-file.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.is_subagent is False
+
+    def test_extract_identifiers_uppercase_uuid(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "550E8400-E29B-41D4-A716-446655440000"
+        file_path = tmp_path / f"{session_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert tf.agent_id is None
+
+    def test_extract_identifiers_mixed_case_uuid(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "550E8400-e29b-41d4-A716-446655440000"
+        file_path = tmp_path / f"{session_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert tf.agent_id is None
+
+    def test_extract_identifiers_complex_agent_id(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        session_id = "88888888-8888-8888-8888-888888888888"
+        agent_id = "task-worker-123_v2.0"
+        subagent_dir = tmp_path / session_id / "subagents"
+        subagent_dir.mkdir(parents=True)
+        file_path = subagent_dir / f"agent-{agent_id}.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf.session_id == session_id
+        assert tf.agent_id == agent_id
+        assert tf.is_subagent is True

@@ -6,7 +6,9 @@ Transcript file
 import json
 import logging
 import os
-from typing import Any, Iterator
+import re
+from collections.abc import Iterator
+from typing import Any
 
 from ..constants import TRANSCRIPT_FILE_EXT
 from ..utils import normalize_path
@@ -34,6 +36,7 @@ class TranscriptFile:
                 f"Invalid transcript file extension: {path}",
             )
         self._items: list[dict[str, Any]] | None = None
+        self._session_id, self._agent_id = self.extract_identifiers()
 
     @property
     def exists(self) -> bool:
@@ -43,12 +46,24 @@ class TranscriptFile:
     def path(self) -> str:
         return self._path
 
+    @property
+    def session_id(self) -> str | None:
+        return self._session_id
+
+    @property
+    def agent_id(self) -> str | None:
+        return self._agent_id
+
+    @property
+    def is_subagent(self) -> bool:
+        return self._agent_id is not None
+
     def iter_items(self) -> Iterator[dict[str, Any]]:
         if not self.exists:
             raise FileNotFoundError(
                 f"Transcript file doesn't exist: {self._path}",
             )
-        with open(self._path, "r", encoding="utf-8-sig") as f:
+        with open(self._path, encoding="utf-8-sig") as f:
             for lineno, line in enumerate(f, start=1):
                 line = line.strip()
                 if not line:
@@ -65,3 +80,17 @@ class TranscriptFile:
         if self._items is None or force:
             self._items = list(self.iter_items())
         return self._items
+
+    def extract_identifiers(self) -> tuple[str | None, str | None]:
+        """
+        Extract session ID and agent ID from the path
+        If the file is a subagent transcript, the agent ID is not None
+
+        :return: tuple[session_id, agent_id]
+        :rtype: tuple[str | None, str | None]
+        """
+        pattern = r".*/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:/subagents/agent-(.*))?\.jsonl$"
+        match = re.match(pattern, self._path)
+        session_id = match.group(1) if match else None
+        agent_id = match.group(2) if match else None
+        return session_id, agent_id
