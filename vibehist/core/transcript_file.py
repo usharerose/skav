@@ -94,3 +94,11 @@ class TranscriptFile:
         session_id = match.group(1) if match else None
         agent_id = match.group(2) if match else None
         return session_id, agent_id
+
+    def __hash__(self) -> int:
+        return hash(self._path)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TranscriptFile):
+            return False
+        return self._path == other._path

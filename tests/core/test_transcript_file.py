@@ -672,3 +672,191 @@ class TestTranscriptFileIdentifiers:
         assert tf.session_id == session_id
         assert tf.agent_id == agent_id
         assert tf.is_subagent is True
+
+
+class TestTranscriptFileHashAndEq:
+    def test_hash_same_path(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "test.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path)
+        tf2 = TranscriptFile(file_path)
+
+        assert hash(tf1) == hash(tf2)
+
+    def test_hash_different_path(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path1 = tmp_path / "test1.jsonl"
+        file_path2 = tmp_path / "test2.jsonl"
+        file_path1.write_text('{"type": "test"}')
+        file_path2.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path1)
+        tf2 = TranscriptFile(file_path2)
+
+        assert hash(tf1) != hash(tf2)
+
+    def test_eq_same_path(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "test.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path)
+        tf2 = TranscriptFile(file_path)
+
+        assert tf1 == tf2
+
+    def test_eq_different_path(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path1 = tmp_path / "test1.jsonl"
+        file_path2 = tmp_path / "test2.jsonl"
+        file_path1.write_text('{"type": "test"}')
+        file_path2.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path1)
+        tf2 = TranscriptFile(file_path2)
+
+        assert tf1 != tf2
+
+    def test_eq_with_non_transcript_file(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "test.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf != "test.jsonl"
+        assert tf != 123
+        assert tf != {"path": str(file_path)}
+
+    def test_can_use_in_set(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path1 = tmp_path / "test1.jsonl"
+        file_path2 = tmp_path / "test2.jsonl"
+        file_path1.write_text('{"type": "test"}')
+        file_path2.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path1)
+        tf2 = TranscriptFile(file_path2)
+        tf3 = TranscriptFile(file_path1)  # Same as tf1
+
+        transcript_set = {tf1, tf2, tf3}
+
+        assert len(transcript_set) == 2
+        assert tf1 in transcript_set
+        assert tf2 in transcript_set
+        assert tf3 in transcript_set
+
+    def test_can_use_as_dict_key(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path1 = tmp_path / "test1.jsonl"
+        file_path2 = tmp_path / "test2.jsonl"
+        file_path1.write_text('{"type": "test"}')
+        file_path2.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path1)
+        tf2 = TranscriptFile(file_path2)
+
+        transcript_dict = {tf1: "first", tf2: "second"}
+
+        assert transcript_dict[tf1] == "first"
+        assert transcript_dict[tf2] == "second"
+
+    def test_set_operations(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path1 = tmp_path / "test1.jsonl"
+        file_path2 = tmp_path / "test2.jsonl"
+        file_path3 = tmp_path / "test3.jsonl"
+        file_path1.write_text('{"type": "test"}')
+        file_path2.write_text('{"type": "test"}')
+        file_path3.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path1)
+        tf2 = TranscriptFile(file_path2)
+        tf3 = TranscriptFile(file_path3)
+
+        set1 = {tf1, tf2}
+        set2 = {tf2, tf3}
+
+        union = set1 | set2
+        assert len(union) == 3
+
+        intersection = set1 & set2
+        assert len(intersection) == 1
+        assert tf2 in intersection
+
+        difference = set1 - set2
+        assert len(difference) == 1
+        assert tf1 in difference
+        assert tf2 not in difference
+
+    def test_hash_stability(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "test.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        hash1 = hash(tf)
+        hash2 = hash(tf)
+        hash3 = hash(tf)
+
+        assert hash1 == hash2 == hash3
+
+    def test_eq_reflexive(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "test.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf = TranscriptFile(file_path)
+
+        assert tf == tf
+
+    def test_eq_symmetric(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "test.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path)
+        tf2 = TranscriptFile(file_path)
+
+        assert tf1 == tf2
+        assert tf2 == tf1
+
+    def test_eq_transitive(
+        self,
+        tmp_path: pathlib.Path,
+    ) -> None:
+        file_path = tmp_path / "test.jsonl"
+        file_path.write_text('{"type": "test"}')
+
+        tf1 = TranscriptFile(file_path)
+        tf2 = TranscriptFile(file_path)
+        tf3 = TranscriptFile(file_path)
+
+        assert tf1 == tf2
+        assert tf2 == tf3
+        assert tf1 == tf3
