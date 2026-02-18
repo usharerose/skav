@@ -86,3 +86,16 @@ class Session:
                 subagent_tf = TranscriptFile(file_path)
                 self._transcript_files.add(subagent_tf)
                 yield subagent_tf
+
+    def __hash__(self) -> int:
+        return hash((str(self._storage_path), str(self._session_id)))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Session):
+            return False
+        return all(
+            [
+                self._storage_path == other._storage_path,
+                self._session_id == other._session_id,
+            ]
+        )
