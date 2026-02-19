@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tool result
+Tool result file for large tool result
 """
 
 import os
@@ -12,7 +12,7 @@ from ..constants import TOOL_RESULT_FILE_EXT
 from ..utils import normalize_path
 
 
-class ToolResult:
+class ToolResultFile:
     def __init__(self, path: str | os.PathLike[str]) -> None:
         self._path = normalize_path(path)
         *_, ext = os.path.splitext(self._path)
