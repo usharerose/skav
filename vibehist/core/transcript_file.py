@@ -8,7 +8,7 @@ import logging
 import os
 import re
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, cast
 
 from ..constants import TRANSCRIPT_FILE_EXT
 from ..utils import normalize_path
@@ -35,7 +35,8 @@ class TranscriptFile:
             raise ValueError(
                 f"Invalid transcript file extension: {path}",
             )
-        self._items: list[dict[str, Any]] | None = None
+        self._items: list[dict[str, Any]] = []
+        self._is_loaded: bool = False
         self._session_id, self._agent_id = self.extract_identifiers()
 
     @property
@@ -58,7 +59,10 @@ class TranscriptFile:
     def is_subagent(self) -> bool:
         return self._agent_id is not None
 
-    def iter_items(self) -> Iterator[dict[str, Any]]:
+    def _load(self) -> None:
+        if self._is_loaded:
+            return
+
         if not self.exists:
             raise FileNotFoundError(
                 f"Transcript file doesn't exist: {self._path}",
@@ -68,18 +72,21 @@ class TranscriptFile:
                 line = line.strip()
                 if not line:
                     continue
+                data: dict[str, Any] | None = None
                 try:
                     data = json.loads(line)
-                    yield data
                 except json.JSONDecodeError:
                     logger.exception(
                         f"Failed to parse {self._path}, line {lineno}: {line[:100]}",
                     )
+                    continue
+                self._items.append(cast(dict[str, Any], data))
+        self._is_loaded = True
 
-    def load(self, force: bool = False) -> list[dict[str, Any]]:
-        if self._items is None or force:
-            self._items = list(self.iter_items())
-        return self._items
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        if not self._is_loaded:
+            self._load()
+        yield from self._items
 
     def extract_identifiers(self) -> tuple[str | None, str | None]:
         """

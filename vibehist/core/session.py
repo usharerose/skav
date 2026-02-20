@@ -32,17 +32,20 @@ class Session:
         if isinstance(session_id, str):
             session_id = uuid.UUID(session_id)
         self._session_id: uuid.UUID = session_id
-        if not any(
+
+        self._transcript_files: set[TranscriptFile] = set()
+        self._is_tf_loaded: bool = False
+        self._tool_result_file_mapping: dict[str, ToolResultFile] = {}
+        self._is_trf_loaded: bool = False
+
+    @property
+    def exists(self) -> bool:
+        return any(
             [
                 os.path.exists(self.session_path()),
                 os.path.exists(self.session_path(is_file=False)),
             ]
-        ):
-            raise FileNotFoundError(
-                f"Session <{self._session_id}> doesn't exist in project storage: {self._storage_path}",
-            )
-        self._transcript_files: set[TranscriptFile] | None = None
-        self._tool_result_file_mapping: dict[str, ToolResultFile] | None = None
+        )
 
     @property
     def session_id(self) -> str:
@@ -61,20 +64,19 @@ class Session:
             entry_name = f"{entry_name}{TRANSCRIPT_FILE_EXT}"
         return os.path.join(str(self._storage_path), entry_name)
 
-    def iter_transcripts(self) -> Iterator[dict[str, Any]]:
-        for tf in self.iter_transcript_files():
-            yield from tf.iter_items()
-
-    def iter_transcript_files(self) -> Iterator[TranscriptFile]:
-        if self._transcript_files is not None:
-            yield from self._transcript_files
+    def _load_transcript_files(self) -> None:
+        if self._is_tf_loaded:
             return
-        self._transcript_files = set()
+
+        if not self.exists:
+            raise FileNotFoundError(
+                f"Session <{self._session_id}> doesn't exist in project storage: {self._storage_path}",
+            )
+
         tf_path = self.session_path()
         if os.path.exists(tf_path):
             tf = TranscriptFile(self.session_path())
             self._transcript_files.add(tf)
-            yield tf
 
         dir_path = self.session_path(is_file=False)
         if not os.path.exists(dir_path):
@@ -87,14 +89,24 @@ class Session:
                     continue
                 subagent_tf = TranscriptFile(file_path)
                 self._transcript_files.add(subagent_tf)
-                yield subagent_tf
-        return
+        self._is_tf_loaded = True
 
-    def _iter_tool_result_files(self) -> Iterator[ToolResultFile]:
-        if self._tool_result_file_mapping is not None:
-            yield from self._tool_result_file_mapping.values()
+    def iter_transcripts(self) -> Iterator[dict[str, Any]]:
+        if not self._is_tf_loaded:
+            self._load_transcript_files()
+
+        for tf in self._transcript_files:
+            yield from tf
+
+    def _load_tool_result_files(self) -> None:
+        if self._is_trf_loaded:
             return
-        self._tool_result_file_mapping = {}
+
+        if not self.exists:
+            raise FileNotFoundError(
+                f"Session <{self._session_id}> doesn't exist in project storage: {self._storage_path}",
+            )
+
         dir_path = self.session_path(is_file=False)
         if not os.path.exists(dir_path):
             return
@@ -106,8 +118,7 @@ class Session:
                     continue
                 tool_result_file = ToolResultFile(file_path)
                 self._tool_result_file_mapping[tool_result_file.tool_use_id] = tool_result_file
-                yield tool_result_file
-        return
+        self._is_trf_loaded = True
 
     def __hash__(self) -> int:
         return hash((str(self._storage_path), str(self._session_id)))
@@ -123,13 +134,10 @@ class Session:
         )
 
     def get_tool_result_file_content(self, tool_use_id: str) -> str | None:
-        if self._tool_result_file_mapping is not None:
-            trf = self._tool_result_file_mapping.get(tool_use_id, None)
-            if trf is not None:
-                return trf.content
-            return None
+        if not self._is_trf_loaded:
+            self._load_tool_result_files()
 
-        for tool_result_file in self._iter_tool_result_files():
-            if tool_result_file.tool_use_id == tool_use_id:
-                return tool_result_file.content
+        trf = self._tool_result_file_mapping.get(tool_use_id, None)
+        if trf is not None:
+            return trf.content
         return None

@@ -23,7 +23,8 @@ class ToolResultFile:
         self._session_id, self._tool_use_id = self.extract_identifiers()
         if any(identifier is None for identifier in (self._session_id, self._tool_use_id)):
             raise ValueError(f"Invalid tool result file path: {path}")
-        self._lines: list[str] | None = None
+        self._lines: list[str] = []
+        self._is_loaded: bool = False
 
     @property
     def path(self) -> str:
@@ -54,22 +55,26 @@ class ToolResultFile:
         tool_use_id = match.group(2) if match else None
         return session_id, tool_use_id
 
-    def iter_lines(self) -> Iterator[str]:
+    def _load(self) -> None:
+        if self._is_loaded:
+            return
+
         if not self.exists:
             raise FileNotFoundError(
                 f"Tool result file doesn't exist: {self._path}",
             )
-        if self._lines is not None:
-            yield from self._lines
-            return
-        self._lines = []
         with open(self._path, encoding="utf-8-sig") as f:
             for line in f:
-                line = line.rstrip("\n")
                 self._lines.append(line)
-                yield line
-        return
+        self._is_loaded = True
+
+    def __iter__(self) -> Iterator[str]:
+        if not self._is_loaded:
+            self._load()
+        yield from self._lines
 
     @property
     def content(self) -> str:
-        return "\n".join(self.iter_lines())
+        if not self._is_loaded:
+            self._load()
+        return "".join(self._lines)
