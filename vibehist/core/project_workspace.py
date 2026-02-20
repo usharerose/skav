@@ -22,24 +22,21 @@ class ProjectWorkspace:
         if not os.path.isdir(epath):
             raise NotADirectoryError(f"Path {epath} is not a directory")
         self._path: str = epath
-        self._project_storage_mapping: dict[str, ProjectStorage] | None = None
+        self._project_storage_mapping: dict[str, ProjectStorage] = {}
+        self._is_loaded: bool = False
 
     def __str__(self) -> str:
         return self._path
 
     def get_project_storage(self, storage_name: str) -> ProjectStorage | None:
-        if self._project_storage_mapping is None:
-            list(self.iter_project_storages())
-        if self._project_storage_mapping is not None:
-            return self._project_storage_mapping.get(storage_name, None)
-        return None
+        if not self._is_loaded:
+            self._load()
+        return self._project_storage_mapping.get(storage_name, None)
 
-    def iter_project_storages(self) -> Iterator[ProjectStorage]:
-        if self._project_storage_mapping is not None:
-            yield from self._project_storage_mapping.values()
-            return None
+    def _load(self) -> None:
+        if self._is_loaded:
+            return
 
-        self._project_storage_mapping = {}
         with os.scandir(self._path) as entries:
             for entry in entries:
                 if not entry.is_dir():
@@ -47,5 +44,9 @@ class ProjectWorkspace:
                 storage_path = ProjectStoragePath(entry.name, self._path)
                 project = ProjectStorage(storage_path)
                 self._project_storage_mapping[entry.name] = project
-                yield project
-        return None
+        self._is_loaded = True
+
+    def iter_project_storages(self) -> Iterator[ProjectStorage]:
+        if not self._is_loaded:
+            self._load()
+        yield from self._project_storage_mapping.values()

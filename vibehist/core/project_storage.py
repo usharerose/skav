@@ -22,7 +22,8 @@ class ProjectStorage:
                 f"Project storage path doesn't exist: {str(storage_path)}",
             )
         self._storage_path: ProjectStoragePath = storage_path
-        self._session_mapping: dict[uuid.UUID, Session] | None = None
+        self._session_mapping: dict[uuid.UUID, Session] = {}
+        self._is_session_loaded: bool = False
 
     @property
     def storage_path(self) -> str:
@@ -30,22 +31,13 @@ class ProjectStorage:
 
     @property
     def sessions(self) -> set[Session]:
-        """
-        Lazy load and return all sessions
-        """
-        if self._session_mapping is None:
-            _ = list(self.iter_sessions())
-        session_set: set[Session] = set()
-        if self._session_mapping is not None:
-            session_set.update(self._session_mapping.values())
-        return session_set
+        if not self._is_session_loaded:
+            self._load_sessions()
+        return set(self._session_mapping.values())
 
-    def iter_sessions(self) -> Iterator[Session]:
-        if self._session_mapping is not None:
-            yield from self._session_mapping.values()
-            return None
-
-        self._session_mapping = {}
+    def _load_sessions(self) -> None:
+        if self._is_session_loaded:
+            return
 
         def _extract_session_id(entry: os.DirEntry[str]) -> uuid.UUID | None:
             session_id: uuid.UUID | None = None
@@ -71,8 +63,7 @@ class ProjectStorage:
                 session_ids.add(session_id)
                 session = Session(self._storage_path, session_id)
                 self._session_mapping[session_id] = session
-                yield session
-        return None
+        self._is_session_loaded = True
 
     def get_session(self, session_id: str | uuid.UUID) -> Session | None:
         if isinstance(session_id, str):
@@ -81,12 +72,19 @@ class ProjectStorage:
             except ValueError as e:
                 logger.exception(f"Badly session_id: {session_id}", exc_info=e)
                 return None
-        if self._session_mapping is None:
-            list(self.iter_sessions())
-        if self._session_mapping is not None:
-            return self._session_mapping.get(session_id, None)
-        return None
+
+        if not self._is_session_loaded:
+            self._load_sessions()
+        return self._session_mapping.get(session_id, None)
 
     def iter_transcript_items(self) -> Iterator[dict[str, Any]]:
         for session in self.sessions:
             yield from session.iter_transcripts()
+
+    def get_tool_result_file_content(
+        self, session_id: str | uuid.UUID, tool_use_id: str
+    ) -> str | None:
+        session = self.get_session(session_id)
+        if session is None:
+            return None
+        return session.get_tool_result_file_content(tool_use_id)
