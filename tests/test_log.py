@@ -25,7 +25,8 @@ class TestServiceNameFilter:
         )
         result = filter_instance.filter(record)
         assert result is True
-        assert record.service_name == "test-service"
+        # service_name is dynamically added by the filter
+        assert getattr(record, "service_name", None) == "test-service"
 
     def test_filter_with_none_service_name(self) -> None:
         filter_instance = ServiceNameFilter(service_name=None)
@@ -39,7 +40,7 @@ class TestServiceNameFilter:
             exc_info=None,
         )
         filter_instance.filter(record)
-        assert record.service_name == "unknown"
+        assert getattr(record, "service_name", None) == "unknown"
 
 
 class TestJsonFormatter:
@@ -74,7 +75,7 @@ class TestJsonFormatter:
             lineno=1,
             msg="error occurred",
             args=(),
-            exc_info=True,
+            exc_info=(ValueError, ValueError("test error"), None),
         )
         # Simulate exception text
         record.exc_text = """
@@ -109,7 +110,7 @@ ValueError: test error
 
     def test_invalid_fmt_type_raises_error(self) -> None:
         with pytest.raises(TypeError):
-            JsonFormatter(fmt="invalid")  # type: ignore[arg-type]
+            JsonFormatter(fmt="invalid")
 
     def test_uses_time(self) -> None:
         formatter_with_time = JsonFormatter(fmt=["message", "asctime"])
@@ -149,7 +150,7 @@ class TestConfigLogging:
         # Verify JSON output contains service_name
         for record in caplog.records:
             assert hasattr(record, "service_name")
-            assert record.service_name == "vibehist"
+            assert getattr(record, "service_name", None) == "vibehist"
 
     def test_config_logging_debug_mode(self) -> None:
         config_logging(service_name="vibehist", debug=True)
@@ -168,6 +169,8 @@ class TestConfigLogging:
 
         # Should default to "unknown"
         root_logger = logging.getLogger()
-        filters = root_logger.handlers[0].filters
-        if filters:
-            assert filters[0]._service_name is None
+        handler = root_logger.handlers[0]
+        if handler.filters:
+            filter_obj = handler.filters[0]
+            if isinstance(filter_obj, ServiceNameFilter):
+                assert filter_obj._service_name is None

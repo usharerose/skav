@@ -12,9 +12,6 @@ from collections.abc import Sequence
 from logging import Filter, Formatter, LogRecord
 from logging.config import dictConfig
 
-__all__ = ["config_logging"]
-
-
 DEFAULT_LOG_CONFIG_DICT = {
     "version": 1,
     "disable_existing_loggers": False,
