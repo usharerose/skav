@@ -13,26 +13,13 @@ import pytest
 from vibehist.core.project_workspace import ProjectWorkspace
 
 
-@pytest.fixture
-def workspace_path(tmp_path: pathlib.Path) -> pathlib.Path:
-    """Create a valid workspace path for testing."""
-    return tmp_path / ".claude" / "projects"
-
-
-@pytest.fixture
-def created_workspace_path(workspace_path: pathlib.Path) -> pathlib.Path:
-    """Create a workspace path that exists on filesystem."""
-    workspace_path.mkdir(parents=True, exist_ok=True)
-    return workspace_path
-
-
-@pytest.fixture
+@pytest.fixture(scope="session")
 def storage_name() -> str:
     """Provide a fixed storage name for testing."""
     return "-home-user-workspace-project"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def storage_name2() -> str:
     """Provide a second fixed storage name for testing."""
     return "-home-user-workspace-project2"
@@ -92,28 +79,28 @@ class TestInit:
 
     def test_init_with_pathlib_object(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         """Test that PathLike objects (pathlib.Path) are supported."""
-        workspace = ProjectWorkspace(created_workspace_path)
-        assert str(workspace) == str(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
+        assert str(workspace) == str(made_workspace_path)
 
     def test_init_creates_empty_state(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         """Test that initialization creates empty internal state."""
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         assert workspace._project_storage_mapping == {}
         assert workspace._is_loaded is False
 
     def test_str_method(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
-        workspace = ProjectWorkspace(created_workspace_path)
-        assert str(workspace) == str(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
+        assert str(workspace) == str(made_workspace_path)
         assert isinstance(str(workspace), str)
 
 
@@ -122,15 +109,15 @@ class TestLoadMethod:
 
     def test_load_only_loads_once(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that workspace is only loaded once."""
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         load_count = 0
 
         original_load = workspace._load
@@ -150,10 +137,10 @@ class TestLoadMethod:
 
     def test_load_sets_loaded_flag(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         """Test that loading sets the _is_loaded flag."""
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         assert workspace._is_loaded is False
 
         workspace._load()
@@ -161,16 +148,16 @@ class TestLoadMethod:
 
     def test_load_ignores_non_directories(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         """Test that _load skips non-directory entries."""
-        project_dir = created_workspace_path / "-valid-project"
+        project_dir = made_workspace_path / "-valid-project"
         project_dir.mkdir(parents=True)
 
         # Create a file in the workspace
-        (created_workspace_path / "not_a_directory.txt").write_text("test")
+        (made_workspace_path / "not_a_directory.txt").write_text("test")
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         workspace._load()
 
         # Should only load the directory, not the file
@@ -179,18 +166,18 @@ class TestLoadMethod:
 
     def test_load_handles_invalid_project_names(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         """Test that _load handles projects with invalid names (non-standard)."""
-        valid_dir = created_workspace_path / "-valid-project"
+        valid_dir = made_workspace_path / "-valid-project"
         valid_dir.mkdir(parents=True)
 
         # Create a directory that doesn't match the storage name pattern
         # This will cause ProjectStoragePath to raise ValueError
-        invalid_dir = created_workspace_path / "non_standard_project"
+        invalid_dir = made_workspace_path / "non_standard_project"
         invalid_dir.mkdir(parents=True)
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         # Should raise ValueError when trying to create ProjectStoragePath
         with pytest.raises(ValueError, match="Storage name must start with"):
@@ -202,10 +189,10 @@ class TestLazyLoading:
 
     def test_iter_project_storages_triggers_load(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         """Test that iteration triggers loading."""
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         assert workspace._is_loaded is False
 
         _ = list(workspace.iter_project_storages())
@@ -213,14 +200,14 @@ class TestLazyLoading:
 
     def test_get_project_storage_triggers_load(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
         """Test that getting project storage triggers loading."""
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         assert workspace._is_loaded is False
 
         _ = workspace.get_project_storage(storage_name)
@@ -228,15 +215,15 @@ class TestLazyLoading:
 
     def test_multiple_operations_only_load_once(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that multiple operations only trigger one load."""
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         load_count = 0
 
         original_load = workspace._load
@@ -259,9 +246,9 @@ class TestLazyLoading:
 class TestIterProjectStorages:
     def test_iter_project_storages_empty_workspace(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         projects = list(workspace.iter_project_storages())
 
         assert projects == []
@@ -269,78 +256,78 @@ class TestIterProjectStorages:
 
     def test_iter_project_storages_single_project(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
         session_id = uuid.uuid4()
         session_file = project_dir / f"{session_id}.jsonl"
         session_file.write_text('{"type": "test"}')
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         projects = list(workspace.iter_project_storages())
 
         assert len(projects) == 1
 
     def test_iter_project_storages_multiple_projects(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
         storage_name2: str,
     ) -> None:
-        project_dir1 = created_workspace_path / storage_name
+        project_dir1 = made_workspace_path / storage_name
         project_dir1.mkdir(parents=True)
 
         session_id1 = uuid.uuid4()
         session_file1 = project_dir1 / f"{session_id1}.jsonl"
         session_file1.write_text('{"type": "test"}')
 
-        project_dir2 = created_workspace_path / storage_name2
+        project_dir2 = made_workspace_path / storage_name2
         project_dir2.mkdir(parents=True)
 
         session_id2 = uuid.uuid4()
         session_file2 = project_dir2 / f"{session_id2}.jsonl"
         session_file2.write_text('{"type": "test"}')
 
-        project_dir3 = created_workspace_path / "-another-project"
+        project_dir3 = made_workspace_path / "-another-project"
         project_dir3.mkdir(parents=True)
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         projects = list(workspace.iter_project_storages())
 
         assert len(projects) == 3
 
     def test_iter_project_storages_ignores_non_directories(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
         session_file = project_dir / f"{uuid.uuid4()}.jsonl"
         session_file.write_text('{"type": "test"}')
 
-        (created_workspace_path / "not_a_directory.txt").write_text("test")
+        (made_workspace_path / "not_a_directory.txt").write_text("test")
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         projects = list(workspace.iter_project_storages())
 
         assert len(projects) == 1
 
     def test_iter_project_storages_uses_cache(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
         """Test that multiple iterations use cached data."""
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
         session_file = project_dir / f"{uuid.uuid4()}.jsonl"
         session_file.write_text('{"type": "test"}')
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         first_projects = list(workspace.iter_project_storages())
         assert workspace._is_loaded is True
@@ -350,10 +337,10 @@ class TestIterProjectStorages:
 
     def test_iter_project_storages_with_sessions(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
         session_ids = [uuid.uuid4() for _ in range(3)]
@@ -361,7 +348,7 @@ class TestIterProjectStorages:
             session_file = project_dir / f"{session_id}.jsonl"
             session_file.write_text(json.dumps({"type": "test", "id": str(session_id)}))
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         projects = list(workspace.iter_project_storages())
 
         assert len(projects) == 1
@@ -372,17 +359,17 @@ class TestIterProjectStorages:
 class TestGetProjectStorage:
     def test_get_project_storage_by_storage_name(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
         session_id = uuid.uuid4()
         session_file = project_dir / f"{session_id}.jsonl"
         session_file.write_text('{"type": "test"}')
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         project = workspace.get_project_storage(storage_name)
 
         assert project is not None
@@ -390,26 +377,26 @@ class TestGetProjectStorage:
 
     def test_get_project_storage_not_found(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         project = workspace.get_project_storage("-nonexistent-project")
 
         assert project is None
 
     def test_get_project_storage_triggers_lazy_loading(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
         session_id = uuid.uuid4()
         session_file = project_dir / f"{session_id}.jsonl"
         session_file.write_text('{"type": "test"}')
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         assert workspace._project_storage_mapping == {}
 
@@ -421,17 +408,17 @@ class TestGetProjectStorage:
 
     def test_get_project_storage_returns_cached(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
         session_id = uuid.uuid4()
         session_file = project_dir / f"{session_id}.jsonl"
         session_file.write_text('{"type": "test"}')
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         project1 = workspace.get_project_storage(storage_name)
         project2 = workspace.get_project_storage(storage_name)
@@ -440,18 +427,18 @@ class TestGetProjectStorage:
 
     def test_get_project_storage_after_initial_load(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
         storage_name: str,
     ) -> None:
         """Test getting project after initial load via iter."""
-        project_dir = created_workspace_path / storage_name
+        project_dir = made_workspace_path / storage_name
         project_dir.mkdir(parents=True)
 
         session_id = uuid.uuid4()
         session_file = project_dir / f"{session_id}.jsonl"
         session_file.write_text('{"type": "test"}')
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         # Load via iteration
         _ = list(workspace.iter_project_storages())
@@ -466,7 +453,7 @@ class TestGetProjectStorage:
 class TestMultipleProjects:
     def test_workspace_with_multiple_projects_with_sessions(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         project_configs = [
             ("-project-a", 2),
@@ -475,7 +462,7 @@ class TestMultipleProjects:
         ]
 
         for storage_name, session_count in project_configs:
-            project_dir = created_workspace_path / storage_name
+            project_dir = made_workspace_path / storage_name
             project_dir.mkdir(parents=True, exist_ok=True)
 
             for _ in range(session_count):
@@ -483,7 +470,7 @@ class TestMultipleProjects:
                 session_file = project_dir / f"{session_id}.jsonl"
                 session_file.write_text(json.dumps({"type": "test", "project": storage_name}))
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
         projects = list(workspace.iter_project_storages())
 
         assert len(projects) == 3
@@ -495,17 +482,17 @@ class TestMultipleProjects:
 
     def test_get_specific_project_from_multiple(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         for i in range(3):
-            project_dir = created_workspace_path / f"-project-{i}"
+            project_dir = made_workspace_path / f"-project-{i}"
             project_dir.mkdir(parents=True)
 
             session_id = uuid.uuid4()
             session_file = project_dir / f"{session_id}.jsonl"
             session_file.write_text(json.dumps({"type": "test", "project": i}))
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         project = workspace.get_project_storage("-project-1")
         assert project is not None
@@ -518,16 +505,16 @@ class TestMultipleProjects:
 
     def test_iter_multiple_projects_correct_ordering(
         self,
-        created_workspace_path: pathlib.Path,
+        made_workspace_path: pathlib.Path,
     ) -> None:
         """Test that iteration returns all projects consistently."""
         storage_names = ["-project-a", "-project-b", "-project-c"]
 
         for storage_name in storage_names:
-            project_dir = created_workspace_path / storage_name
+            project_dir = made_workspace_path / storage_name
             project_dir.mkdir(parents=True)
 
-        workspace = ProjectWorkspace(created_workspace_path)
+        workspace = ProjectWorkspace(made_workspace_path)
 
         projects1 = list(workspace.iter_project_storages())
         projects2 = list(workspace.iter_project_storages())

@@ -3,65 +3,69 @@
 Unit tests for ToolResultFile
 """
 
+import os
 import pathlib
+import uuid
 
 import pytest
 
+from vibehist.core.project_storage_path import ProjectStoragePath
 from vibehist.core.tool_result_file import ToolResultFile
 
 
-@pytest.fixture
-def valid_session_id() -> str:
-    return "12345678-1234-1234-1234-123456789abc"
-
-
-@pytest.fixture
-def valid_tool_use_id() -> str:
+@pytest.fixture(scope="session")
+def tool_use_id() -> str:
     return "call_a1b2c3d4"
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def tool_result_path(
-    tmp_path: pathlib.Path,
-    valid_session_id: str,
-    valid_tool_use_id: str,
+    made_project_storage_path_obj: ProjectStoragePath,
+    session_id: uuid.UUID,
+    tool_use_id: str,
 ) -> pathlib.Path:
-    tool_result_dir = tmp_path / valid_session_id / "tool-results"
+    tool_result_dir = pathlib.Path(
+        os.path.join(
+            str(made_project_storage_path_obj),
+            str(session_id),
+            "tool-results",
+        )
+    )
     tool_result_dir.mkdir(parents=True)
-    return tool_result_dir / f"{valid_tool_use_id}.txt"
+    return tool_result_dir / f"{tool_use_id}.txt"
 
 
 class TestToolResultFileInit:
     def test_valid_path_with_session_id_and_tool_use_id(
         self,
         tool_result_path: pathlib.Path,
-        valid_session_id: str,
-        valid_tool_use_id: str,
+        session_id: uuid.UUID,
+        tool_use_id: str,
     ) -> None:
         result = ToolResultFile(tool_result_path)
 
         assert result.path == str(tool_result_path)
-        assert result.session_id == valid_session_id
-        assert result.tool_use_id == valid_tool_use_id
+        assert result.session_id == str(session_id)
+        assert result.tool_use_id == tool_use_id
 
     def test_init_with_pathlib_object(
         self,
         tool_result_path: pathlib.Path,
-        valid_session_id: str,
-        valid_tool_use_id: str,
+        session_id: uuid.UUID,
+        tool_use_id: str,
     ) -> None:
         result = ToolResultFile(tool_result_path)
 
         assert result.path == str(tool_result_path)
-        assert result.session_id == valid_session_id
-        assert result.tool_use_id == valid_tool_use_id
+        assert result.session_id == str(session_id)
+        assert result.tool_use_id == tool_use_id
 
     def test_invalid_file_extension(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        tool_result_dir = tmp_path / valid_session_id / "tool-results"
+        tool_result_dir = tmp_path / str(session_id) / "tool-results"
         tool_result_dir.mkdir(parents=True)
         tool_result_path = tool_result_dir / "call_a1b2c3d4.json"
 
@@ -71,9 +75,9 @@ class TestToolResultFileInit:
     def test_invalid_file_extension_without_dot(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        tool_result_dir = tmp_path / valid_session_id / "tool-results"
+        tool_result_dir = tmp_path / str(session_id) / "tool-results"
         tool_result_dir.mkdir(parents=True)
         tool_result_path = tool_result_dir / "call_a1b2c3d4"
 
@@ -105,9 +109,9 @@ class TestToolResultFileInit:
     def test_missing_tool_use_id(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        tool_result_dir = tmp_path / valid_session_id / "tool-results"
+        tool_result_dir = tmp_path / str(session_id) / "tool-results"
         tool_result_dir.mkdir(parents=True)
         tool_result_path = tool_result_dir / "not_call_a1b2c3d4.txt"
 
@@ -117,9 +121,9 @@ class TestToolResultFileInit:
     def test_missing_tool_results_directory(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        tool_result_dir = tmp_path / valid_session_id / "wrong-dir"
+        tool_result_dir = tmp_path / str(session_id) / "wrong-dir"
         tool_result_dir.mkdir(parents=True)
         tool_result_path = tool_result_dir / "call_a1b2c3d4.txt"
 
@@ -159,16 +163,16 @@ class TestToolResultFileExtractIdentifiers:
     def test_extract_valid_identifiers(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
         tool_use_id = "call_a1b2c3d4e5f6"
-        tool_result_dir = tmp_path / valid_session_id / "tool-results"
+        tool_result_dir = tmp_path / str(session_id) / "tool-results"
         tool_result_dir.mkdir(parents=True)
         tool_result_path = tool_result_dir / f"{tool_use_id}.txt"
 
         result = ToolResultFile(tool_result_path)
 
-        assert result.session_id == valid_session_id
+        assert result.session_id == str(session_id)
         assert result.tool_use_id == tool_use_id
 
     def test_extract_with_mixed_case_uuid(
@@ -189,10 +193,10 @@ class TestToolResultFileExtractIdentifiers:
     def test_extract_tool_use_id_with_underscores_and_numbers(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
         tool_use_id = "call_abc123_def456"
-        tool_result_dir = tmp_path / valid_session_id / "tool-results"
+        tool_result_dir = tmp_path / str(session_id) / "tool-results"
         tool_result_dir.mkdir(parents=True)
         tool_result_path = tool_result_dir / f"{tool_use_id}.txt"
 
@@ -202,9 +206,9 @@ class TestToolResultFileExtractIdentifiers:
     def test_extract_uppercase_in_tool_use_id_rejected(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        tool_result_dir = tmp_path / valid_session_id / "tool-results"
+        tool_result_dir = tmp_path / str(session_id) / "tool-results"
         tool_result_dir.mkdir(parents=True)
         tool_result_path = tool_result_dir / "call_Abc123.txt"
 
