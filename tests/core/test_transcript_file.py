@@ -6,36 +6,43 @@ Unit tests for TranscriptFile
 import json
 import os
 import pathlib
+import uuid
 
 import pytest
 
+from vibehist.core.project_storage_path import ProjectStoragePath
 from vibehist.core.transcript_file import TranscriptFile
 
 
-@pytest.fixture
-def valid_session_id() -> str:
-    return "12345678-1234-1234-1234-123456789abc"
+@pytest.fixture(scope="session")
+def agent_id() -> str:
+    return "12345"
 
 
-@pytest.fixture
-def valid_agent_id() -> str:
-    return "agenet-12345"
-
-
-@pytest.fixture
-def transcript_path(tmp_path: pathlib.Path) -> pathlib.Path:
-    return tmp_path / "12345678-1234-1234-1234-123456789abc.jsonl"
-
-
-@pytest.fixture
-def subagent_transcript_path(
-    tmp_path: pathlib.Path,
-    valid_session_id: str,
-    valid_agent_id: str,
+@pytest.fixture(scope="function")
+def transcript_path(
+    made_project_storage_path_obj: ProjectStoragePath,
+    session_id: uuid.UUID,
 ) -> pathlib.Path:
-    subagent_dir = tmp_path / valid_session_id / "subagents"
+    epath = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+    return pathlib.Path(epath)
+
+
+@pytest.fixture(scope="function")
+def subagent_transcript_path(
+    made_project_storage_path_obj: ProjectStoragePath,
+    session_id: uuid.UUID,
+    agent_id: str,
+) -> pathlib.Path:
+    subagent_dir = pathlib.Path(
+        os.path.join(
+            str(made_project_storage_path_obj),
+            str(session_id),
+            "subagents",
+        )
+    )
     subagent_dir.mkdir(parents=True)
-    return subagent_dir / f"agent-{valid_agent_id}.jsonl"
+    return subagent_dir / f"agent-{agent_id}.jsonl"
 
 
 class TestTranscriptFileInit:
@@ -492,29 +499,29 @@ class TestTranscriptFileIdentifiers:
     def test_extract_identifiers_session_only(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        file_path = tmp_path / f"{valid_session_id}.jsonl"
+        file_path = tmp_path / f"{session_id}.jsonl"
         file_path.write_text('{"type": "test"}')
 
         tf = TranscriptFile(file_path)
 
-        assert tf.session_id == valid_session_id
+        assert tf.session_id == str(session_id)
         assert tf.agent_id is None
         assert tf.is_subagent is False
 
     def test_extract_identifiers_subagent(
         self,
         subagent_transcript_path: pathlib.Path,
-        valid_session_id: str,
-        valid_agent_id: str,
+        session_id: uuid.UUID,
+        agent_id: str,
     ) -> None:
         subagent_transcript_path.write_text('{"type": "test"}')
 
         tf = TranscriptFile(subagent_transcript_path)
 
-        assert tf.session_id == valid_session_id
-        assert tf.agent_id == valid_agent_id
+        assert tf.session_id == str(session_id)
+        assert tf.agent_id == agent_id
         assert tf.is_subagent is True
 
     def test_extract_identifiers_nested_path(
@@ -561,30 +568,30 @@ class TestTranscriptFileIdentifiers:
     def test_extract_identifiers_empty_agent_id(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        subagent_dir = tmp_path / valid_session_id / "subagents"
+        subagent_dir = tmp_path / str(session_id) / "subagents"
         subagent_dir.mkdir(parents=True)
         file_path = subagent_dir / "agent-.jsonl"
         file_path.write_text('{"type": "test"}')
 
         tf = TranscriptFile(file_path)
 
-        assert tf.session_id == valid_session_id
+        assert tf.session_id == str(session_id)
         assert tf.agent_id == ""
         assert tf.is_subagent is True
 
     def test_session_id_property(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        file_path = tmp_path / f"{valid_session_id}.jsonl"
+        file_path = tmp_path / f"{session_id}.jsonl"
         file_path.write_text('{"type": "user"}')
 
         tf = TranscriptFile(file_path)
 
-        assert tf.session_id == valid_session_id
+        assert tf.session_id == str(session_id)
         assert isinstance(tf.session_id, str)
 
     def test_session_id_property_none(
@@ -601,22 +608,22 @@ class TestTranscriptFileIdentifiers:
     def test_agent_id_property(
         self,
         subagent_transcript_path: pathlib.Path,
-        valid_session_id: str,
-        valid_agent_id: str,
+        session_id: uuid.UUID,
+        agent_id: str,
     ) -> None:
         subagent_transcript_path.write_text('{"type": "assistant"}')
 
         tf = TranscriptFile(subagent_transcript_path)
 
-        assert tf.agent_id == valid_agent_id
+        assert tf.agent_id == agent_id
         assert isinstance(tf.agent_id, str)
 
     def test_agent_id_property_none_for_main_session(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        file_path = tmp_path / f"{valid_session_id}.jsonl"
+        file_path = tmp_path / f"{session_id}.jsonl"
         file_path.write_text('{"type": "user"}')
 
         tf = TranscriptFile(file_path)
@@ -636,9 +643,9 @@ class TestTranscriptFileIdentifiers:
     def test_is_subagent_property_false(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
-        file_path = tmp_path / f"{valid_session_id}.jsonl"
+        file_path = tmp_path / f"{session_id}.jsonl"
         file_path.write_text('{"type": "test"}')
 
         tf = TranscriptFile(file_path)
@@ -682,20 +689,20 @@ class TestTranscriptFileIdentifiers:
         assert tf.session_id == session_id
         assert tf.agent_id is None
 
-    def test_extract_identifiers_complex_agent_id(
+    def test_extract_identifiers_invalid_agent_id(
         self,
         tmp_path: pathlib.Path,
-        valid_session_id: str,
+        session_id: uuid.UUID,
     ) -> None:
         agent_id = "task-worker-123_v2.0"
-        subagent_dir = tmp_path / valid_session_id / "subagents"
+        subagent_dir = tmp_path / str(session_id) / "subagents"
         subagent_dir.mkdir(parents=True)
         file_path = subagent_dir / f"agent-{agent_id}.jsonl"
         file_path.write_text('{"type": "test"}')
 
         tf = TranscriptFile(file_path)
 
-        assert tf.session_id == valid_session_id
+        assert tf.session_id == str(session_id)
         assert tf.agent_id == agent_id
         assert tf.is_subagent is True
 
