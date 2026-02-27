@@ -8,16 +8,14 @@ from typing import Any, cast
 import pytest
 
 from vibehist.core.models.tool_use_result import (
-    CacheCreation,
     QuestionItem,
-    ServerToolUse,
     StatusChange,
     StructuredPatch,
     TaskSubagent,
     TaskTodoWrite,
     ToolUseResult,
-    Usage,
 )
+from vibehist.core.models.usage import CacheCreation, ServerToolUse, Usage
 
 SAMPLE_USAGE_WITH_CACHE: dict[str, Any] = {
     "input_tokens": 12361,

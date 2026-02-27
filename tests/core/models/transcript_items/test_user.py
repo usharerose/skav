@@ -8,9 +8,7 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.messages.content import (
-    ToolResultContentItem,
-)
+from vibehist.core.models.contents import ToolResultContentItem
 from vibehist.core.models.messages.user_message import UserMessage
 from vibehist.core.models.transcript_items.user import UserTranscriptItem
 

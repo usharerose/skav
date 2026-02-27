@@ -7,12 +7,12 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.messages.content import (
+from vibehist.core.models.contents import (
     DocumentContentItem,
-    DocumentContentSource,
     TextContentItem,
     ToolResultContentItem,
 )
+from vibehist.core.models.contents.document import DocumentContentSource
 
 
 SAMPLE_TEXT_CONTENT_REAL = {

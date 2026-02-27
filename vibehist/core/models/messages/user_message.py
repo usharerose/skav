@@ -7,7 +7,11 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from .content import DocumentContentItem, TextContentItem, ToolResultContentItem
+from ..contents import (
+    DocumentContentItem,
+    TextContentItem,
+    ToolResultContentItem,
+)
 
 
 class UserMessage(BaseModel):
