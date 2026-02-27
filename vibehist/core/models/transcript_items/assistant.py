@@ -4,13 +4,11 @@ Assistant transcript item model
 """
 
 import datetime
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
 from ..messages import AssistantMessage
-from ..thinking_metadata import ThinkingMetadata
-from ..tool_use_result import ToolUseResult
 
 
 class AssistantTranscriptItem(BaseModel):

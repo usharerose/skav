@@ -44,10 +44,10 @@ SAMPLE_USAGE_MINIMAL: dict[str, Any] = {
 SAMPLE_TOOL_RESULT_FILE_READ: dict[str, Any] = {
     "tool_use_id": "call_98a174fc29634f1aa752b66f",
     "content": (
-        '     1→#!/usr/bin/env python3\n'
+        "     1→#!/usr/bin/env python3\n"
         '     2→"""\n'
-        '     3→Type definitions for Claude Code Hook events\n'
-        '     4→Based on official documentation: https://code.claude.com/docs/en/hooks\n'
+        "     3→Type definitions for Claude Code Hook events\n"
+        "     4→Based on official documentation: https://code.claude.com/docs/en/hooks\n"
         '     5→"""\n'
     ),
 }

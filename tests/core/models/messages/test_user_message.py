@@ -7,13 +7,12 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.messages.user_message import UserMessage
 from vibehist.core.models.contents import (
     DocumentContentItem,
     TextContentItem,
     ToolResultContentItem,
 )
-
+from vibehist.core.models.messages.user_message import UserMessage
 
 SAMPLE_USER_MESSAGE_STRING_CONTENT = {
     "role": "user",
@@ -144,6 +143,7 @@ class TestUserMessage:
         assert len(message.content) == 2
         assert isinstance(message.content[0], TextContentItem)
         assert message.content[0].text == "First message"
+        assert isinstance(message.content[1], TextContentItem)
         assert message.content[1].text == "Second message"
 
     def test_content_as_list_of_tool_result_items_real_data(self) -> None:
@@ -204,6 +204,7 @@ class TestUserMessage:
 
         assert isinstance(message.content, list)
         assert len(message.content) == 1
+        assert isinstance(message.content[0], TextContentItem)
         assert message.content[0].text == "Single item"
 
     def test_tool_result_with_is_error_real_data(self) -> None:
