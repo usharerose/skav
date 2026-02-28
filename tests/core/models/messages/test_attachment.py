@@ -12,8 +12,7 @@ from vibehist.core.models.messages.attachment import (
     TodoReminderAttachment,
 )
 
-# Synthetic data (not found in real jsonl files)
-SAMPLE_CRITICAL_SYSTEM_REMINDER: dict[str, Any] = {
+ATTACHMENT_CRITICAL_SYSTEM_REMINDER: dict[str, Any] = {
     "type": "attachment",
     "uuid": "attachment-uuid-001",
     "timestamp": "2026-02-27T10:00:00.000Z",
@@ -23,7 +22,7 @@ SAMPLE_CRITICAL_SYSTEM_REMINDER: dict[str, Any] = {
     },
 }
 
-SAMPLE_PLAN_MODE_REMINDER: dict[str, Any] = {
+ATTACHMENT_PLAN_MODE_REMINDER_FULL: dict[str, Any] = {
     "type": "attachment",
     "uuid": "attachment-uuid-002",
     "timestamp": "2026-02-27T10:00:01.000Z",
@@ -36,7 +35,7 @@ SAMPLE_PLAN_MODE_REMINDER: dict[str, Any] = {
     },
 }
 
-SAMPLE_PLAN_MODE_REMINDER_SPARSE: dict[str, Any] = {
+ATTACHMENT_PLAN_MODE_REMINDER_SPARSE: dict[str, Any] = {
     "type": "attachment",
     "uuid": "attachment-uuid-003",
     "timestamp": "2026-02-27T10:00:02.000Z",
@@ -49,7 +48,7 @@ SAMPLE_PLAN_MODE_REMINDER_SPARSE: dict[str, Any] = {
     },
 }
 
-SAMPLE_TODO_REMINDER: dict[str, Any] = {
+ATTACHMENT_TODO_REMINDER: dict[str, Any] = {
     "type": "attachment",
     "uuid": "attachment-uuid-004",
     "timestamp": "2026-02-27T10:00:03.000Z",
@@ -67,10 +66,10 @@ SAMPLE_TODO_REMINDER: dict[str, Any] = {
 class TestCriticalSystemReminderAttachment:
     """Test CriticalSystemReminderAttachment model"""
 
-    def test_critical_system_reminder_with_model_validate(self) -> None:
-        """Test creating CriticalSystemReminderAttachment using model_validate"""
+    def test_critical_system_reminder(self) -> None:
+        """Test creating CriticalSystemReminderAttachment"""
         attachment = CriticalSystemReminderAttachment.model_validate(
-            SAMPLE_CRITICAL_SYSTEM_REMINDER["attachment"]
+            ATTACHMENT_CRITICAL_SYSTEM_REMINDER["attachment"]
         )
 
         assert attachment.type == "critical_system_reminder"
@@ -89,7 +88,7 @@ class TestPlanModeReminderAttachment:
     def test_plan_mode_reminder_full(self) -> None:
         """Test creating PlanModeReminderAttachment with full reminder type"""
         attachment = PlanModeReminderAttachment.model_validate(
-            SAMPLE_PLAN_MODE_REMINDER["attachment"]
+            ATTACHMENT_PLAN_MODE_REMINDER_FULL["attachment"]
         )
 
         assert attachment.type == "plan_mode_reminder"
@@ -101,7 +100,7 @@ class TestPlanModeReminderAttachment:
     def test_plan_mode_reminder_sparse(self) -> None:
         """Test creating PlanModeReminderAttachment with sparse reminder type"""
         attachment = PlanModeReminderAttachment.model_validate(
-            SAMPLE_PLAN_MODE_REMINDER_SPARSE["attachment"]
+            ATTACHMENT_PLAN_MODE_REMINDER_SPARSE["attachment"]
         )
 
         assert attachment.type == "plan_mode_reminder"
@@ -126,9 +125,9 @@ class TestPlanModeReminderAttachment:
 class TestTodoReminderAttachment:
     """Test TodoReminderAttachment model"""
 
-    def test_todo_reminder_with_model_validate(self) -> None:
-        """Test creating TodoReminderAttachment using model_validate"""
-        attachment = TodoReminderAttachment.model_validate(SAMPLE_TODO_REMINDER["attachment"])
+    def test_todo_reminder(self) -> None:
+        """Test creating TodoReminderAttachment"""
+        attachment = TodoReminderAttachment.model_validate(ATTACHMENT_TODO_REMINDER["attachment"])
 
         assert attachment.type == "todo_reminder"
         assert len(attachment.content) == 2
@@ -136,7 +135,7 @@ class TestTodoReminderAttachment:
 
     def test_content_list(self) -> None:
         """Test content field is a list"""
-        attachment = TodoReminderAttachment.model_validate(SAMPLE_TODO_REMINDER["attachment"])
+        attachment = TodoReminderAttachment.model_validate(ATTACHMENT_TODO_REMINDER["attachment"])
 
         assert isinstance(attachment.content, list)
         assert attachment.content[0] == {"task": "Implement feature X", "done": False}
@@ -153,7 +152,7 @@ class TestAttachmentMessage:
 
     def test_critical_system_reminder_message(self) -> None:
         """Test AttachmentMessage with CriticalSystemReminderAttachment"""
-        message = AttachmentMessage.model_validate(SAMPLE_CRITICAL_SYSTEM_REMINDER)
+        message = AttachmentMessage.model_validate(ATTACHMENT_CRITICAL_SYSTEM_REMINDER)
 
         assert message.type == "attachment"
         assert message.uuid == "attachment-uuid-001"
@@ -162,7 +161,7 @@ class TestAttachmentMessage:
 
     def test_plan_mode_reminder_message(self) -> None:
         """Test AttachmentMessage with PlanModeReminderAttachment"""
-        message = AttachmentMessage.model_validate(SAMPLE_PLAN_MODE_REMINDER)
+        message = AttachmentMessage.model_validate(ATTACHMENT_PLAN_MODE_REMINDER_FULL)
 
         assert message.type == "attachment"
         assert isinstance(message.attachment, PlanModeReminderAttachment)
@@ -170,7 +169,7 @@ class TestAttachmentMessage:
 
     def test_todo_reminder_message(self) -> None:
         """Test AttachmentMessage with TodoReminderAttachment"""
-        message = AttachmentMessage.model_validate(SAMPLE_TODO_REMINDER)
+        message = AttachmentMessage.model_validate(ATTACHMENT_TODO_REMINDER)
 
         assert message.type == "attachment"
         assert isinstance(message.attachment, TodoReminderAttachment)
@@ -178,13 +177,13 @@ class TestAttachmentMessage:
 
     def test_type_default_value(self) -> None:
         """Test that type has default value 'attachment'"""
-        message = AttachmentMessage.model_validate(SAMPLE_CRITICAL_SYSTEM_REMINDER)
+        message = AttachmentMessage.model_validate(ATTACHMENT_CRITICAL_SYSTEM_REMINDER)
 
         assert message.type == "attachment"
 
     def test_timestamp_parsing(self) -> None:
         """Test ISO 8601 timestamp parsing"""
-        message = AttachmentMessage.model_validate(SAMPLE_CRITICAL_SYSTEM_REMINDER)
+        message = AttachmentMessage.model_validate(ATTACHMENT_CRITICAL_SYSTEM_REMINDER)
 
         import datetime
 
