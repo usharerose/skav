@@ -40,6 +40,13 @@ SAMPLE_SERVER_TOOL_USE_WITH_COMPLEX_INPUT: dict[str, Any] = {
     },
 }
 
+SAMPLE_SERVER_TOOL_USE_WITH_JSON_STRING_INPUT: dict[str, Any] = {
+    "type": "server_tool_use",
+    "id": "call_3a668e254f814eaf9f36302d",
+    "name": "webReader",
+    "input": '{"url":"https://code.claude.com/docs/en/hooks","return_format":"markdown"}',
+}
+
 
 class TestServerToolUseContentItem:
     """Test ServerToolUseContentItem model validation and parsing"""
@@ -70,6 +77,7 @@ class TestServerToolUseContentItem:
         item = ServerToolUseContentItem.model_validate(SAMPLE_SERVER_TOOL_USE_WEB_SEARCH)
 
         assert item.name == "web_search"
+        assert isinstance(item.input, dict)
         assert item.input["query"] == "Python pydantic tutorial"
 
     def test_server_tool_web_fetch(self) -> None:
@@ -77,6 +85,7 @@ class TestServerToolUseContentItem:
         item = ServerToolUseContentItem.model_validate(SAMPLE_SERVER_TOOL_USE_WEB_FETCH)
 
         assert item.name == "web_fetch"
+        assert isinstance(item.input, dict)
         assert item.input["url"] == "https://example.com"
         assert item.input["prompt"] == "Summarize this page"
 
@@ -85,6 +94,7 @@ class TestServerToolUseContentItem:
         item = ServerToolUseContentItem.model_validate(SAMPLE_SERVER_TOOL_USE_WITH_COMPLEX_INPUT)
 
         assert item.name == "custom_server_tool"
+        assert isinstance(item.input, dict)
         assert item.input["param1"] == "value1"
         assert item.input["param2"] == 42
         assert item.input["param3"] is True
@@ -94,6 +104,7 @@ class TestServerToolUseContentItem:
         """Test input with single parameter"""
         item = ServerToolUseContentItem.model_validate(SAMPLE_SERVER_TOOL_USE_WEB_SEARCH)
 
+        assert isinstance(item.input, dict)
         assert len(item.input) == 1
         assert "query" in item.input
 
@@ -101,6 +112,7 @@ class TestServerToolUseContentItem:
         """Test input with multiple parameters"""
         item = ServerToolUseContentItem.model_validate(SAMPLE_SERVER_TOOL_USE_WITH_COMPLEX_INPUT)
 
+        assert isinstance(item.input, dict)
         assert len(item.input) == 4
         assert "param1" in item.input
         assert "param2" in item.input
@@ -125,3 +137,24 @@ class TestServerToolUseContentItem:
         }
         with pytest.raises(ValueError):
             ServerToolUseContentItem.model_validate(data)
+
+    def test_input_as_json_string(self) -> None:
+        """Test input field as JSON string is auto-parsed to dict"""
+        item = ServerToolUseContentItem.model_validate(
+            SAMPLE_SERVER_TOOL_USE_WITH_JSON_STRING_INPUT
+        )
+
+        assert item.type == "server_tool_use"
+        assert item.id == "call_3a668e254f814eaf9f36302d"
+        assert item.name == "webReader"
+        # Input JSON string is automatically parsed to dict by field_validator
+        assert isinstance(item.input, dict)
+        assert item.input["url"] == "https://code.claude.com/docs/en/hooks"
+        assert item.input["return_format"] == "markdown"
+
+    def test_input_as_dict(self) -> None:
+        """Test input field as dictionary"""
+        item = ServerToolUseContentItem.model_validate(SAMPLE_SERVER_TOOL_USE_WEB_SEARCH)
+
+        assert isinstance(item.input, dict)
+        assert item.input["query"] == "Python pydantic tutorial"
