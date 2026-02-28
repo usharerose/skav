@@ -10,7 +10,7 @@ from pydantic import BaseModel, field_validator
 
 
 class TrackedFileBackup(BaseModel):
-    backupFileName: str
+    backupFileName: str | None
     backupTime: datetime.datetime
     version: int
 

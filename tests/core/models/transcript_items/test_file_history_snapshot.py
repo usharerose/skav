@@ -59,6 +59,23 @@ SAMPLE_SNAPSHOT_VERSION_2: dict[str, Any] = {
     "isSnapshotUpdate": False,
 }
 
+SAMPLE_SNAPSHOT_WITH_NULL_BACKUP_FILENAME: dict[str, Any] = {
+    "type": "file-history-snapshot",
+    "messageId": "dbeef230-d77d-4770-8be7-fee63b234a28",
+    "snapshot": {
+        "messageId": "ef36d3b6-2df9-4f8c-b4bb-99aa98d6bdd6",
+        "trackedFileBackups": {
+            "k8s/helm/templates/_helpers.tpl": {
+                "backupFileName": None,
+                "version": 1,
+                "backupTime": "2026-02-24T06:54:43.302Z",
+            }
+        },
+        "timestamp": "2026-02-24T06:53:06.450Z",
+    },
+    "isSnapshotUpdate": True,
+}
+
 
 class TestTrackedFileBackup:
     """Test TrackedFileBackup model validation"""
@@ -106,6 +123,16 @@ class TestTrackedFileBackup:
         backup = TrackedFileBackup.model_validate(backup_data)
 
         assert backup.backupFileName == "1a2c1563547d06e9@v1"
+
+    def test_backup_filename_null(self) -> None:
+        """Test backupFileName field with None value"""
+        backup_data = SAMPLE_SNAPSHOT_WITH_NULL_BACKUP_FILENAME["snapshot"]["trackedFileBackups"][
+            "k8s/helm/templates/_helpers.tpl"
+        ]
+        backup = TrackedFileBackup.model_validate(backup_data)
+
+        assert backup.backupFileName is None
+        assert backup.version == 1
 
 
 class TestSnapshot:
