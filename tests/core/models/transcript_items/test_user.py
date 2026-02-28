@@ -119,6 +119,30 @@ SAMPLE_USER_ENTRY_WITH_THINKING_METADATA: dict[str, Any] = {
     "permissionMode": "default",
 }
 
+SAMPLE_USER_ENTRY_WITH_PERMISSION_MODE_PLAN: dict[str, Any] = {
+    "parentUuid": "ac27042d-0d98-492c-aaf8-a6f61d060686",
+    "isSidechain": False,
+    "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "d357933d-7244-48e3-850c-b8887b04aafd",
+    "version": "2.1.41",
+    "gitBranch": "fix/permission-mode-definition",
+    "slug": "clever-mixing-papert",
+    "type": "user",
+    "message": {
+        "role": "user",
+        "content": (
+            "Please review @/Users/root/workspace/project/ "
+            "permission mode definition and implementation"
+        ),
+    },
+    "uuid": "23e2070e-188d-4e1d-b34a-e5ee29416744",
+    "timestamp": "2026-02-18T11:22:55.740Z",
+    "thinkingMetadata": {"maxThinkingTokens": 31999},
+    "todos": [],
+    "permissionMode": "plan",
+}
+
 
 class TestUserTranscriptItem:
     """Test UserTranscriptItem model validation and parsing"""
@@ -347,3 +371,19 @@ class TestUserTranscriptItem:
         assert entry.message.content[0].type == "tool_result"
         assert entry.message.content[0].is_error is True
         assert "File does not exist" in entry.message.content[0].content
+
+    def test_permission_mode_default(self) -> None:
+        """Test permissionMode with 'default' value"""
+        entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_THINKING_METADATA)
+
+        assert entry.permissionMode == "default"
+
+    def test_permission_mode_plan(self) -> None:
+        """Test permissionMode with 'plan' value"""
+        entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_PERMISSION_MODE_PLAN)
+
+        assert entry.permissionMode == "plan"
+        assert entry.thinkingMetadata is not None
+        assert entry.thinkingMetadata.maxThinkingTokens == 31999
+        assert entry.todos == []
+        assert "permission mode definition and implementation" in entry.message.content

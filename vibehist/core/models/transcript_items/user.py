@@ -33,7 +33,10 @@ class UserTranscriptItem(BaseModel):
     isCompactSummary: bool | None = None
     isMeta: bool | None = None
     isVisibleInTranscriptOnly: bool | None = None
-    permissionMode: Literal["default"] | None = None
+
+    # TODO: check the avaliable permission modes
+    permissionMode: Literal["default", "plan"] | str | None = None
+
     planContent: str | None = None
     slug: str | None = None
     sourceToolUseID: str | None = None
