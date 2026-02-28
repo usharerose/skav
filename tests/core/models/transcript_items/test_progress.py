@@ -12,7 +12,6 @@ from vibehist.core.models.transcript_items.progress import (
     McpProgressData,
     ProgressTranscriptItem,
     SearchResultsReceivedProgressData,
-    WaitingForTaskProgressData,
 )
 
 # Real data samples from actual Claude Code transcript JSONL files
@@ -104,65 +103,46 @@ SAMPLE_PROGRESS_AGENT: dict[str, Any] = {
 }
 
 SAMPLE_PROGRESS_MCP: dict[str, Any] = {
-    "type": "progress",
-    "sessionId": "test-session-id",
-    "parentUuid": None,
-    "parentToolUseID": "call_test123",
-    "toolUseID": "call_mcp456",
-    "uuid": "mcp-progress-uuid",
-    "timestamp": "2026-02-27T10:00:00.000Z",
-    "version": "2.1.49",
-    "cwd": "/test/workspace",
-    "gitBranch": "main",
+    "parentUuid": "8b2faf36-ba45-4d67-ae6e-7a411ddeccd8",
     "isSidechain": False,
     "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "64b75bb6-4eee-42bc-ad15-84c896f5fa66",
+    "version": "2.1.34",
+    "gitBranch": "master",
+    "type": "progress",
     "data": {
         "type": "mcp_progress",
-        "status": "completed",
-        "serverName": "filesystem",
-        "toolName": "read_file",
-        "elapsedTimeMs": 150,
+        "status": "started",
+        "serverName": "gitlab",
+        "toolName": "get_branch_diffs",
     },
+    "toolUseID": "call_69968db2179f4633824e1471",
+    "parentToolUseID": "call_69968db2179f4633824e1471",
+    "uuid": "0f2d700d-0818-4aad-aac4-ed8b59137e2a",
+    "timestamp": "2026-02-11T05:03:34.945Z",
 }
 
 SAMPLE_PROGRESS_SEARCH_RESULTS: dict[str, Any] = {
-    "type": "progress",
-    "sessionId": "test-session-id",
-    "parentUuid": None,
-    "parentToolUseID": "call_test123",
-    "toolUseID": "call_search456",
-    "uuid": "search-progress-uuid",
-    "timestamp": "2026-02-27T10:00:00.000Z",
-    "version": "2.1.49",
-    "cwd": "/test/workspace",
-    "gitBranch": "main",
-    "isSidechain": False,
+    "parentUuid": "444983db-e107-4945-8401-bbefbe853c73",
+    "isSidechain": True,
     "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "f8fdfde3-33dc-4ed0-a9c4-542a65868762",
+    "version": "2.1.34",
+    "gitBranch": "master",
+    "agentId": "abac390",
+    "slug": "bright-sauteeing-wilkes",
+    "type": "progress",
     "data": {
         "type": "search_results_received",
-        "query": "test query",
         "resultCount": 10,
+        "query": "Claude Code hooks documentation 2026 events",
     },
-}
-
-SAMPLE_PROGRESS_WAITING: dict[str, Any] = {
-    "type": "progress",
-    "sessionId": "test-session-id",
-    "parentUuid": None,
-    "parentToolUseID": "call_test123",
-    "toolUseID": "call_wait456",
-    "uuid": "waiting-progress-uuid",
-    "timestamp": "2026-02-27T10:00:00.000Z",
-    "version": "2.1.49",
-    "cwd": "/test/workspace",
-    "gitBranch": "main",
-    "isSidechain": False,
-    "userType": "external",
-    "data": {
-        "type": "waiting_for_task",
-        "taskDescription": "Processing file",
-        "taskType": "bash",
-    },
+    "toolUseID": "call_56312813203b48cdae9144ac",
+    "parentToolUseID": "call_5a4d359c4b714375b64f320f",
+    "uuid": "2e4f0588-4b8e-478d-a987-bbe342be0f4c",
+    "timestamp": "2026-02-12T04:54:50.312Z",
 }
 
 
@@ -247,14 +227,13 @@ class TestMcpProgressData:
     """Test McpProgressData model"""
 
     def test_mcp_progress_with_model_validate(self) -> None:
-        """Test creating McpProgressData using model_validate"""
+        """Test creating McpProgressData using model_validate with real data"""
         data = McpProgressData.model_validate(SAMPLE_PROGRESS_MCP["data"])
 
         assert data.type == "mcp_progress"
-        assert data.status == "completed"
-        assert data.serverName == "filesystem"
-        assert data.toolName == "read_file"
-        assert data.elapsedTimeMs == 150
+        assert data.status == "started"
+        assert data.serverName == "gitlab"
+        assert data.toolName == "get_branch_diffs"
 
     def test_mcp_progress_fields(self) -> None:
         """Test all McpProgressData fields"""
@@ -264,20 +243,19 @@ class TestMcpProgressData:
         assert hasattr(data, "status")
         assert hasattr(data, "serverName")
         assert hasattr(data, "toolName")
-        assert hasattr(data, "elapsedTimeMs")
 
 
 class TestSearchResultsReceivedProgressData:
     """Test SearchResultsReceivedProgressData model"""
 
     def test_search_results_with_model_validate(self) -> None:
-        """Test creating SearchResultsReceivedProgressData using model_validate"""
+        """Test creating SearchResultsReceivedProgressData using model_validate with real data"""
         data = SearchResultsReceivedProgressData.model_validate(
             SAMPLE_PROGRESS_SEARCH_RESULTS["data"]
         )
 
         assert data.type == "search_results_received"
-        assert data.query == "test query"
+        assert data.query == "Claude Code hooks documentation 2026 events"
         assert data.resultCount == 10
 
     def test_search_results_fields(self) -> None:
@@ -289,26 +267,6 @@ class TestSearchResultsReceivedProgressData:
         assert hasattr(data, "type")
         assert hasattr(data, "query")
         assert hasattr(data, "resultCount")
-
-
-class TestWaitingForTaskProgressData:
-    """Test WaitingForTaskProgressData model"""
-
-    def test_waiting_for_task_with_model_validate(self) -> None:
-        """Test creating WaitingForTaskProgressData using model_validate"""
-        data = WaitingForTaskProgressData.model_validate(SAMPLE_PROGRESS_WAITING["data"])
-
-        assert data.type == "waiting_for_task"
-        assert data.taskDescription == "Processing file"
-        assert data.taskType == "bash"
-
-    def test_waiting_for_task_fields(self) -> None:
-        """Test all WaitingForTaskProgressData fields"""
-        data = WaitingForTaskProgressData.model_validate(SAMPLE_PROGRESS_WAITING["data"])
-
-        assert hasattr(data, "type")
-        assert hasattr(data, "taskDescription")
-        assert hasattr(data, "taskType")
 
 
 class TestProgressTranscriptItem:
@@ -411,11 +369,9 @@ class TestProgressTranscriptItem:
         agent = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_AGENT)
         mcp = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_MCP)
         search = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_SEARCH_RESULTS)
-        waiting = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_WAITING)
 
         assert isinstance(bash.data, BashProgressData)
         assert isinstance(hook.data, HookProgressData)
         assert isinstance(agent.data, AgentProgressData)
         assert isinstance(mcp.data, McpProgressData)
         assert isinstance(search.data, SearchResultsReceivedProgressData)
-        assert isinstance(waiting.data, WaitingForTaskProgressData)

@@ -20,7 +20,6 @@ class BaseProgressData(BaseModel):
         "hook_progress",
         "mcp_progress",
         "search_results_received",
-        "waiting_for_task",
     ]
 
 
@@ -106,13 +105,6 @@ class SearchResultsReceivedProgressData(BaseProgressData):
     resultCount: int
 
 
-class WaitingForTaskProgressData(BaseProgressData):
-    type: Literal["waiting_for_task"] = "waiting_for_task"
-
-    taskDescription: str
-    taskType: str
-
-
 class ProgressTranscriptItem(BaseModel):
     type: Literal["progress"] = "progress"
 
@@ -135,7 +127,6 @@ class ProgressTranscriptItem(BaseModel):
         | HookProgressData
         | McpProgressData
         | SearchResultsReceivedProgressData
-        | WaitingForTaskProgressData
     )
 
     agentId: str | None = None
