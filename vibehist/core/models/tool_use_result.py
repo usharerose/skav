@@ -129,7 +129,7 @@ class ToolUseResult(BaseModel):
     query: str | None = None
     questions: list[QuestionItem] | None = None
     replaceAll: bool | None = None
-    results: list[ResultItem] | str | None = None
+    results: list[ResultItem | str] | None = None
     retrieval_status: str | None = None
     returnCodeInterpretation: str | None = None
     shell_id: str | None = None

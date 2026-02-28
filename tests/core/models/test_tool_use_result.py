@@ -95,6 +95,24 @@ SYNTHETIC_QUESTION: dict[str, Any] = {
     "multiSelect": False,
 }
 
+SAMPLE_TOOL_RESULT_WITH_RESULTS: dict[str, Any] = {
+    "query": "pydantic v1 validator mixin inheritance not working",
+    "results": [
+        "Web search error: undefined",
+        (
+            "Based on my web search, "
+            "I found several relevant resources about "
+            "Pydantic v1 validator mixin inheritance issues:\n\n"
+            "## Key Issues Found\n\n"
+            "### 1. **Known Bug: Subclass validators with `each_item=True`**\n"
+            "From Pydantic 1.10.26 release notes:\n"
+            "> \"Subclass validators do not run when referencing a 'List' field "
+            'defined in a parent class when `each_item=True`"\n\n'
+        ),
+    ],
+    "durationSeconds": 19.717920416995884,
+}
+
 
 class TestToolUseResult:
     """Test ToolUseResult model validation"""
@@ -330,3 +348,28 @@ class TestToolUseResult:
 
         assert cc.ephemeral_1h_input_tokens == 0
         assert cc.ephemeral_5m_input_tokens == 0
+
+    def test_results_with_string_list(self) -> None:
+        """Test results field with list of strings"""
+        result = ToolUseResult.model_validate(SAMPLE_TOOL_RESULT_WITH_RESULTS)
+
+        assert result.results is not None
+        assert isinstance(result.results, list)
+        assert len(result.results) == 2
+        first, second = result.results
+
+        assert first == "Web search error: undefined"
+        assert "Pydantic v1 validator mixin inheritance" in second
+
+    def test_results_none(self) -> None:
+        """Test results field can be None"""
+        result = ToolUseResult.model_validate({"mode": "content"})
+
+        assert result.results is None
+
+    def test_query_with_results(self) -> None:
+        """Test query field with results"""
+        result = ToolUseResult.model_validate(SAMPLE_TOOL_RESULT_WITH_RESULTS)
+
+        assert result.query == "pydantic v1 validator mixin inheritance not working"
+        assert result.durationSeconds == 19.717920416995884
