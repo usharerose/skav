@@ -40,7 +40,7 @@ class TodoItem(BaseModel):
 
 class QuestionOptionItem(BaseModel):
     label: str
-    value: str
+    description: str
 
 
 class QuestionItem(BaseModel):

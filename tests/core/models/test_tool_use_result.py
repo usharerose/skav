@@ -89,8 +89,8 @@ SYNTHETIC_QUESTION: dict[str, Any] = {
     "question": "What is your favorite color?",
     "header": "Preference",
     "options": [
-        {"label": "Red", "value": "red"},
-        {"label": "Blue", "value": "blue"},
+        {"label": "Red", "description": "The color red"},
+        {"label": "Blue", "description": "The color blue"},
     ],
     "multiSelect": False,
 }
@@ -201,7 +201,7 @@ class TestToolUseResult:
         assert question.header == "Preference"
         assert len(question.options) == 2
         assert question.options[0].label == "Red"
-        assert question.options[0].value == "red"
+        assert question.options[0].description == "The color red"
         assert question.multiSelect is False
 
     def test_answers_dict_with_model_validate(self) -> None:
