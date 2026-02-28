@@ -12,7 +12,7 @@ from vibehist.core.models.contents import (
     TextContentItem,
     ToolResultContentItem,
 )
-from vibehist.core.models.messages.user_message import UserMessage
+from vibehist.core.models.messages.user import UserMessage
 
 SAMPLE_USER_MESSAGE_STRING_CONTENT = {
     "role": "user",

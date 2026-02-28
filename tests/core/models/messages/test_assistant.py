@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from vibehist.core.models.messages.assistant_message import AssistantMessage
+from vibehist.core.models.messages.assistant import AssistantMessage
 
 SAMPLE_ASSISTANT_MESSAGE_TEXT_ONLY: dict[str, Any] = {
     "id": "msg_2026022222573947d4e82262af4dc8",
