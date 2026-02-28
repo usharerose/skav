@@ -8,6 +8,7 @@ from typing import Any, cast
 import pytest
 
 from vibehist.core.models.tool_use_result import (
+    FileItem,
     QuestionItem,
     StatusChange,
     StructuredPatch,
@@ -15,276 +16,310 @@ from vibehist.core.models.tool_use_result import (
     TaskTodoWrite,
     ToolUseResult,
 )
-from vibehist.core.models.usage import CacheCreation, ServerToolUse, Usage
 
-SAMPLE_USAGE_WITH_CACHE: dict[str, Any] = {
-    "input_tokens": 12361,
-    "cache_creation_input_tokens": 0,
-    "cache_read_input_tokens": 8448,
-    "output_tokens": 133,
-    "server_tool_use": {
-        "web_search_requests": 0,
-        "web_fetch_requests": 0,
+TOOL_RESULT_MINIMAL: dict[str, Any] = {
+    "mode": "content",
+}
+
+TOOL_RESULT_FILE_READ: dict[str, Any] = {
+    "type": "text",
+    "file": {
+        "filePath": "/Users/root/workspace/project/test.py",
+        "content": "# Test file\nprint('hello')\n",
+        "numLines": 2,
+        "startLine": 1,
+        "totalLines": 2,
     },
-    "service_tier": "standard",
-    "cache_creation": {
-        "ephemeral_1h_input_tokens": 0,
-        "ephemeral_5m_input_tokens": 0,
-    },
-    "inference_geo": "",
-    "iterations": [],
-    "speed": "standard",
 }
 
-SAMPLE_USAGE_MINIMAL: dict[str, Any] = {
-    "input_tokens": 0,
-    "output_tokens": 0,
-}
-
-SAMPLE_TOOL_RESULT_FILE_READ: dict[str, Any] = {
-    "tool_use_id": "call_98a174fc29634f1aa752b66f",
-    "content": (
-        "     1→#!/usr/bin/env python3\n"
-        '     2→"""\n'
-        "     3→Type definitions for Claude Code Hook events\n"
-        "     4→Based on official documentation: https://code.claude.com/docs/en/hooks\n"
-        '     5→"""\n'
-    ),
-}
-
-SAMPLE_TOOL_RESULT_ERROR: dict[str, Any] = {
-    "tool_use_id": "call_d9860daaecc9416e94d7c2f3",
-    "content": (
-        "File does not exist. "
-        "Note: your current working directory is /Users/root/workspace/project. "
-        "Did you mean models?"
-    ),
-}
-
-SAMPLE_TOOL_RESULT_GLOB: dict[str, Any] = {
-    "tool_use_id": "call_ea6db1d11e5248be8875da9d",
-    "content": (
-        "/Users/root/workspace/project/vibehist/__init__.py\n"
-        "/Users/root/workspace/project/vibehist/app.py\n"
-        "/Users/root/workspace/project/vibehist/types.py"
-    ),
-}
-
-# Synthetic samples for fields not found in real data
-SYNTHETIC_TODO_WRITE: dict[str, Any] = {
-    "id": "1",
-    "subject": "Create test file",
-}
-
-SYNTHETIC_SUBAGENT: dict[str, Any] = {
-    "task_id": "b52e837",
-    "task_type": "local_bash",
-    "status": "running",
-    "description": "Run tests",
-    "output": "Running...",
-    "exitCode": None,
-}
-
-SYNTHETIC_QUESTION: dict[str, Any] = {
-    "question": "What is your favorite color?",
-    "header": "Preference",
-    "options": [
-        {"label": "Red", "description": "The color red"},
-        {"label": "Blue", "description": "The color blue"},
+TOOL_RESULT_GLOB: dict[str, Any] = {
+    "mode": "files_with_matches",
+    "filenames": [
+        "/Users/root/workspace/project/test.py",
+        "/Users/root/workspace/project/main.py",
     ],
-    "multiSelect": False,
+    "numFiles": 2,
 }
 
-SAMPLE_TOOL_RESULT_WITH_RESULTS: dict[str, Any] = {
-    "query": "pydantic v1 validator mixin inheritance not working",
+TOOL_RESULT_SHELL: dict[str, Any] = {
+    "stdout": "Running tests...\nTests passed: 10\n",
+    "stderr": "",
+    "interrupted": False,
+    "isImage": False,
+    "noOutputExpected": False,
+}
+
+TOOL_RESULT_SHELL_WITH_INTERPRETATION: dict[str, Any] = {
+    "stdout": "",
+    "stderr": "",
+    "interrupted": False,
+    "isImage": False,
+    "returnCodeInterpretation": "No matches found",
+    "noOutputExpected": False,
+}
+
+TOOL_RESULT_GREP: dict[str, Any] = {
+    "mode": "content",
+    "numFiles": 0,
+    "filenames": [],
+    "content": "file.py:10:def test_function():\nfile.py:11:    assert True\n",
+    "numLines": 2,
+    "appliedLimit": 50,
+}
+
+TOOL_RESULT_EDIT: dict[str, Any] = {
+    "type": "update",
+    "mode": "content",
+    "filePath": "/Users/root/workspace/project/test.py",
+    "oldString": "def old_function():\n    pass\n",
+    "newString": "def new_function():\n    return True\n",
+    "replaceAll": False,
+    "originalFile": "# Original content\n",
+    "structuredPatch": [
+        {
+            "oldStart": 10,
+            "oldLines": 2,
+            "newStart": 10,
+            "newLines": 2,
+            "lines": [
+                " def old_function():",
+                "-    pass",
+                "+def new_function():",
+                "+    return True",
+            ],
+        }
+    ],
+    "userModified": False,
+}
+
+TOOL_RESULT_CREATE: dict[str, Any] = {
+    "type": "create",
+    "filePath": "/Users/root/workspace/project/new_file.py",
+    "content": "# New file\nprint('hello')\n",
+    "structuredPatch": [],
+    "originalFile": None,
+}
+
+TOOL_RESULT_MESSAGE: dict[str, Any] = {
+    "message": (
+        "Entered plan mode. "
+        "You should now focus on exploring the codebase "
+        "and designing an implementation approach."
+    ),
+}
+
+TOOL_RESULT_TASK_TODO: dict[str, Any] = {
+    "task": {
+        "id": "1",
+        "subject": "Create test file",
+    },
+}
+
+TOOL_RESULT_TASK_SUBAGENT: dict[str, Any] = {
+    "task": {
+        "task_id": "b52e837",
+        "task_type": "local_bash",
+        "status": "running",
+        "description": "Run tests",
+        "output": "Running...",
+        "exitCode": None,
+    },
+}
+
+TOOL_RESULT_STATUS_CHANGE: dict[str, Any] = {
+    "success": True,
+    "taskId": "1",
+    "updatedFields": ["status"],
+    "statusChange": {
+        "from": "pending",
+        "to": "completed",
+    },
+}
+
+TOOL_RESULT_WEB_SEARCH: dict[str, Any] = {
+    "query": "pydantic v1 validator mixin inheritance",
     "results": [
         "Web search error: undefined",
-        (
-            "Based on my web search, "
-            "I found several relevant resources about "
-            "Pydantic v1 validator mixin inheritance issues:\n\n"
-            "## Key Issues Found\n\n"
-            "### 1. **Known Bug: Subclass validators with `each_item=True`**\n"
-            "From Pydantic 1.10.26 release notes:\n"
-            "> \"Subclass validators do not run when referencing a 'List' field "
-            'defined in a parent class when `each_item=True`"\n\n'
-        ),
+        "Based on web search, found relevant resources about Pydantic v1...",
     ],
-    "durationSeconds": 19.717920416995884,
+    "durationSeconds": 19.7,
+}
+
+TOOL_RESULT_QUESTIONS: dict[str, Any] = {
+    "questions": [
+        {
+            "question": "What is your preference?",
+            "header": "Configuration",
+            "options": [
+                {"label": "Option A", "description": "Description A"},
+                {"label": "Option B", "description": "Description B"},
+            ],
+            "multiSelect": False,
+        }
+    ],
+    "answers": {
+        "What is your preference?": "Option A",
+    },
+    "annotations": {
+        "What is your preference?": {
+            "notes": "User selected Option A",
+        },
+    },
 }
 
 
 class TestToolUseResult:
     """Test ToolUseResult model validation"""
 
-    def test_minimal_result_with_model_validate(self) -> None:
-        """Test minimal tool use result using model_validate"""
-        result = ToolUseResult.model_validate({"mode": "content"})
+    def test_minimal_result(self) -> None:
+        """Test creating minimal tool use result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_MINIMAL)
 
         assert result.mode == "content"
         assert result.content is None
         assert result.message is None
 
-    def test_file_read_result_with_model_validate(self) -> None:
-        """Test file read result structure using model_validate"""
-        result_data = {
-            "type": "text",
-            "file": {
-                "filePath": "/test/file.py",
-                "content": "file content",
-                "numLines": 100,
-                "startLine": 1,
-                "totalLines": 100,
-            },
-        }
-        result = ToolUseResult.model_validate(result_data)
+    def test_file_read_result(self) -> None:
+        """Test file read result structure"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_FILE_READ)
 
         assert result.type == "text"
         assert result.file is not None
-        assert result.file.filePath == "/test/file.py"
-        assert result.file.content == "file content"
-        assert result.file.numLines == 100
+        assert result.file.filePath == "/Users/root/workspace/project/test.py"
+        assert result.file.content == "# Test file\nprint('hello')\n"
+        assert result.file.numLines == 2
+        assert result.file.startLine == 1
+        assert result.file.totalLines == 2
 
-    def test_glob_result_with_model_validate(self) -> None:
-        """Test glob tool result using model_validate"""
-        result_data = {
-            "mode": "files_with_matches",
-            "filenames": ["file1.py", "file2.py"],
-            "numFiles": 2,
-        }
-        result = ToolUseResult.model_validate(result_data)
+    def test_glob_result(self) -> None:
+        """Test glob tool result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_GLOB)
 
         assert result.mode == "files_with_matches"
-        assert result.filenames == ["file1.py", "file2.py"]
+        assert result.filenames == [
+            "/Users/root/workspace/project/test.py",
+            "/Users/root/workspace/project/main.py",
+        ]
         assert result.numFiles == 2
 
-    def test_usage_with_cache_info_real_data(self) -> None:
-        """Test usage with cache statistics using real data"""
-        usage = Usage.model_validate(SAMPLE_USAGE_WITH_CACHE)
+    def test_shell_command_result(self) -> None:
+        """Test shell command result with stdout/stderr"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_SHELL)
 
-        assert usage.input_tokens == 12361
-        assert usage.output_tokens == 133
-        assert usage.cache_read_input_tokens == 8448
-        assert usage.service_tier == "standard"
-        assert usage.server_tool_use is not None
-        assert usage.server_tool_use.web_search_requests == 0
-        assert usage.cache_creation is not None
-        assert usage.cache_creation.ephemeral_5m_input_tokens == 0
+        assert result.stdout == "Running tests...\nTests passed: 10\n"
+        assert result.stderr == ""
+        assert result.interrupted is False
+        assert result.isImage is False
+        assert result.noOutputExpected is False
 
-    def test_usage_minimal_real_data(self) -> None:
-        """Test minimal usage using real data"""
-        usage = Usage.model_validate(SAMPLE_USAGE_MINIMAL)
+    def test_shell_result_with_interpretation(self) -> None:
+        """Test shell result with return code interpretation"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_SHELL_WITH_INTERPRETATION)
 
-        assert usage.input_tokens == 0
-        assert usage.output_tokens == 0
-        assert usage.cache_read_input_tokens is None
-        assert usage.service_tier is None
+        assert result.stdout == ""
+        assert result.stderr == ""
+        assert result.returnCodeInterpretation == "No matches found"
+        assert result.interrupted is False
 
-    def test_task_todo_write_with_model_validate(self) -> None:
-        """Test TodoWrite task result using model_validate"""
-        task = TaskTodoWrite.model_validate(SYNTHETIC_TODO_WRITE)
+    def test_grep_content_mode(self) -> None:
+        """Test grep/glob content mode with appliedLimit"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_GREP)
 
-        assert task.id == "1"
-        assert task.subject == "Create test file"
+        assert result.mode == "content"
+        assert result.content is not None
+        assert result.numFiles == 0
+        assert result.filenames == []
+        assert result.numLines == 2
+        assert result.appliedLimit == 50
 
-    def test_task_subagent_with_model_validate(self) -> None:
-        """Test subagent task result using model_validate"""
-        task = TaskSubagent.model_validate(SYNTHETIC_SUBAGENT)
-
-        assert task.task_id == "b52e837"
-        assert task.task_type == "local_bash"
-        assert task.status == "running"
-        assert task.description == "Run tests"
-        assert task.output == "Running..."
-        assert task.exitCode is None
-
-    def test_result_with_usage_real_data(self) -> None:
-        """Test tool result with usage information using real data"""
-        result_data = {
-            "mode": "content",
-            "content": "Result content",
-            "usage": SAMPLE_USAGE_MINIMAL,
-        }
-        result = ToolUseResult.model_validate(result_data)
-
-        assert result.usage is not None
-        assert result.usage.input_tokens == 0
-        assert result.usage.output_tokens == 0
-
-    def test_question_item_with_model_validate(self) -> None:
-        """Test question item structure using model_validate"""
-        question = QuestionItem.model_validate(SYNTHETIC_QUESTION)
-
-        assert question.question == "What is your favorite color?"
-        assert question.header == "Preference"
-        assert len(question.options) == 2
-        assert question.options[0].label == "Red"
-        assert question.options[0].description == "The color red"
-        assert question.multiSelect is False
-
-    def test_answers_dict_with_model_validate(self) -> None:
-        """Test answers dictionary using model_validate"""
-        result = ToolUseResult.model_validate(
-            {
-                "mode": "content",
-                "answers": {
-                    "color": "red",
-                    "size": "large",
-                },
-            }
-        )
-
-        assert result.answers is not None
-        assert result.answers["color"] == "red"
-        assert result.answers["size"] == "large"
-
-    def test_edit_result_with_model_validate(self) -> None:
-        """Test edit operation result using model_validate"""
-        result = ToolUseResult.model_validate(
-            {
-                "type": "update",
-                "mode": "content",
-                "oldString": "old code",
-                "newString": "new code",
-                "replaceAll": False,
-                "file": {
-                    "filePath": "/test.py",
-                    "content": "updated content",
-                },
-                "userModified": False,
-            }
-        )
+    def test_edit_result(self) -> None:
+        """Test edit operation result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_EDIT)
 
         assert result.type == "update"
-        assert result.oldString == "old code"
-        assert result.newString == "new code"
+        assert result.mode == "content"
+        assert result.filePath == "/Users/root/workspace/project/test.py"
+        assert result.oldString is not None
+        assert "def old_function" in result.oldString
+        assert result.newString is not None
+        assert "def new_function" in result.newString
         assert result.replaceAll is False
         assert result.userModified is False
+        assert result.structuredPatch is not None
+        assert len(result.structuredPatch) == 1
 
-    def test_structured_patch_with_model_validate(self) -> None:
-        """Test structured patch result using model_validate"""
-        patch = StructuredPatch.model_validate(
-            {
-                "lines": ["line1", "line2", "line3"],
-                "newLines": 3,
-                "newStart": 10,
-                "oldLines": 2,
-                "oldStart": 10,
-            }
+    def test_create_file_result(self) -> None:
+        """Test create file result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_CREATE)
+
+        assert result.type == "create"
+        assert result.filePath == "/Users/root/workspace/project/new_file.py"
+        assert result.content is not None
+        assert result.originalFile is None
+        assert result.structuredPatch == []
+
+    def test_message_only_result(self) -> None:
+        """Test message only result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_MESSAGE)
+
+        assert result.message == (
+            "Entered plan mode. "
+            "You should now focus on exploring the codebase "
+            "and designing an implementation approach."
         )
 
-        assert patch.lines == ["line1", "line2", "line3"]
-        assert patch.newLines == 3
-        assert patch.newStart == 10
-        assert patch.oldLines == 2
-        assert patch.oldStart == 10
+    def test_task_union_todo_write(self) -> None:
+        """Test task field with TodoWrite type"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_TASK_TODO)
 
-    def test_status_change_with_model_validate(self) -> None:
-        """Test status change structure using model_validate"""
-        change = StatusChange.model_validate({"from": "pending", "to": "completed"})
+        assert result.task is not None
+        assert isinstance(result.task, TaskTodoWrite)
+        assert result.task.id == "1"
+        assert result.task.subject == "Create test file"
 
-        assert change.from_ == "pending"  # Note: from is a reserved word, uses alias
-        assert change.to == "completed"
+    def test_task_union_subagent(self) -> None:
+        """Test task field with Subagent type"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_TASK_SUBAGENT)
+
+        assert result.task is not None
+        assert isinstance(result.task, TaskSubagent)
+        assert result.task.task_id == "b52e837"
+        assert result.task.status == "running"
+        assert result.task.exitCode is None
+
+    def test_status_change_result(self) -> None:
+        """Test status change result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_STATUS_CHANGE)
+
+        assert result.success is True
+        assert result.taskId == "1"
+        assert result.updatedFields == ["status"]
+        assert result.statusChange is not None
+        assert result.statusChange.from_ == "pending"
+        assert result.statusChange.to == "completed"
+
+    def test_web_search_result(self) -> None:
+        """Test web search result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_WEB_SEARCH)
+
+        assert result.query == "pydantic v1 validator mixin inheritance"
+        assert result.results is not None
+        assert len(result.results) == 2
+        assert isinstance(result.results[0], str)
+        assert result.durationSeconds == 19.7
+
+    def test_questions_and_answers(self) -> None:
+        """Test questions and answers result"""
+        result = ToolUseResult.model_validate(TOOL_RESULT_QUESTIONS)
+
+        assert result.questions is not None
+        assert len(result.questions) == 1
+        assert result.questions[0].question == "What is your preference?"
+        assert result.questions[0].multiSelect is False
+        assert result.answers is not None
+        assert result.answers["What is your preference?"] == "Option A"
+        assert result.annotations is not None
+        assert result.annotations["What is your preference?"].notes == "User selected Option A"
 
     def test_invalid_mode_rejected(self) -> None:
         """Test that invalid mode is rejected"""
@@ -310,66 +345,134 @@ class TestToolUseResult:
                 }
             )
 
-    def test_task_union_todo_write_with_model_validate(self) -> None:
-        """Test task field with TodoWrite type using model_validate"""
-        result = ToolUseResult.model_validate({"task": SYNTHETIC_TODO_WRITE})
 
-        assert result.task is not None
-        # Should be parsed as TaskTodoWrite
-        assert isinstance(result.task, TaskTodoWrite)
-        assert result.task.id == "1"
+class TestStructuredPatch:
+    """Test StructuredPatch model validation"""
 
-    def test_task_union_subagent_with_model_validate(self) -> None:
-        """Test task field with Subagent type using model_validate"""
-        result = ToolUseResult.model_validate({"task": SYNTHETIC_SUBAGENT})
+    def test_structured_patch(self) -> None:
+        """Test structured patch result"""
+        patch = StructuredPatch.model_validate(
+            {
+                "lines": ["line1", "line2", "line3"],
+                "newLines": 3,
+                "newStart": 10,
+                "oldLines": 2,
+                "oldStart": 10,
+            }
+        )
 
-        assert result.task is not None
-        # Should be parsed as TaskSubagent
-        assert isinstance(result.task, TaskSubagent)
-        assert result.task.task_id == "b52e837"
+        assert patch.lines == ["line1", "line2", "line3"]
+        assert patch.newLines == 3
+        assert patch.newStart == 10
+        assert patch.oldLines == 2
+        assert patch.oldStart == 10
 
-    def test_empty_usage_with_model_validate(self) -> None:
-        """Test usage with zero tokens using real data"""
-        usage = Usage.model_validate(SAMPLE_USAGE_MINIMAL)
 
-        assert usage.input_tokens == 0
-        assert usage.output_tokens == 0
+class TestStatusChange:
+    """Test StatusChange model validation"""
 
-    def test_server_tool_use_with_model_validate(self) -> None:
-        """Test server_tool_use using model_validate with real data"""
-        stu = ServerToolUse.model_validate(SAMPLE_USAGE_WITH_CACHE["server_tool_use"])
+    def test_status_change(self) -> None:
+        """Test status change structure"""
+        change = StatusChange.model_validate({"from": "pending", "to": "completed"})
 
-        assert stu.web_search_requests == 0
-        assert stu.web_fetch_requests == 0
+        assert change.from_ == "pending"  # Note: from is a reserved word, uses alias
+        assert change.to == "completed"
 
-    def test_cache_creation_with_model_validate(self) -> None:
-        """Test cache_creation using model_validate with real data"""
-        cc = CacheCreation.model_validate(SAMPLE_USAGE_WITH_CACHE["cache_creation"])
 
-        assert cc.ephemeral_1h_input_tokens == 0
-        assert cc.ephemeral_5m_input_tokens == 0
+class TestQuestionItem:
+    """Test QuestionItem model validation"""
 
-    def test_results_with_string_list(self) -> None:
-        """Test results field with list of strings"""
-        result = ToolUseResult.model_validate(SAMPLE_TOOL_RESULT_WITH_RESULTS)
+    def test_question_item(self) -> None:
+        """Test question item structure"""
+        question = QuestionItem.model_validate(
+            {
+                "question": "What is your preference?",
+                "header": "Configuration",
+                "options": [
+                    {"label": "Option A", "description": "Description A"},
+                    {"label": "Option B", "description": "Description B"},
+                ],
+                "multiSelect": False,
+            }
+        )
 
-        assert result.results is not None
-        assert isinstance(result.results, list)
-        assert len(result.results) == 2
-        first, second = result.results
+        assert question.question == "What is your preference?"
+        assert question.header == "Configuration"
+        assert len(question.options) == 2
+        assert question.options[0].label == "Option A"
+        assert question.options[0].description == "Description A"
+        assert question.multiSelect is False
 
-        assert first == "Web search error: undefined"
-        assert "Pydantic v1 validator mixin inheritance" in second
 
-    def test_results_none(self) -> None:
-        """Test results field can be None"""
-        result = ToolUseResult.model_validate({"mode": "content"})
+class TestTaskTodoWrite:
+    """Test TaskTodoWrite model validation"""
 
-        assert result.results is None
+    def test_task_todo_write(self) -> None:
+        """Test TodoWrite task result"""
+        task = TaskTodoWrite.model_validate(
+            {
+                "id": "1",
+                "subject": "Create test file",
+            }
+        )
 
-    def test_query_with_results(self) -> None:
-        """Test query field with results"""
-        result = ToolUseResult.model_validate(SAMPLE_TOOL_RESULT_WITH_RESULTS)
+        assert task.id == "1"
+        assert task.subject == "Create test file"
 
-        assert result.query == "pydantic v1 validator mixin inheritance not working"
-        assert result.durationSeconds == 19.717920416995884
+
+class TestTaskSubagent:
+    """Test TaskSubagent model validation"""
+
+    def test_task_subagent(self) -> None:
+        """Test subagent task result"""
+        task = TaskSubagent.model_validate(
+            {
+                "task_id": "b52e837",
+                "task_type": "local_bash",
+                "status": "running",
+                "description": "Run tests",
+                "output": "Running...",
+                "exitCode": None,
+            }
+        )
+
+        assert task.task_id == "b52e837"
+        assert task.task_type == "local_bash"
+        assert task.status == "running"
+        assert task.description == "Run tests"
+        assert task.output == "Running..."
+        assert task.exitCode is None
+
+
+class TestFileItem:
+    """Test FileItem model validation"""
+
+    def test_file_item_full(self) -> None:
+        """Test file item with all fields"""
+        file_item = FileItem.model_validate(
+            {
+                "filePath": "/test/file.py",
+                "content": "file content",
+                "numLines": 100,
+                "startLine": 1,
+                "totalLines": 100,
+            }
+        )
+
+        assert file_item.filePath == "/test/file.py"
+        assert file_item.content == "file content"
+        assert file_item.numLines == 100
+        assert file_item.startLine == 1
+        assert file_item.totalLines == 100
+
+    def test_file_item_partial(self) -> None:
+        """Test file item with partial fields"""
+        file_item = FileItem.model_validate(
+            {
+                "filePath": "/test/file.py",
+            }
+        )
+
+        assert file_item.filePath == "/test/file.py"
+        assert file_item.content is None
+        assert file_item.numLines is None
