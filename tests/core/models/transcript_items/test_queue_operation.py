@@ -17,12 +17,12 @@ SAMPLE_QUEUE_OPERATION_ENQUEUE: dict[str, Any] = {
     "timestamp": "2026-02-27T08:22:03.232Z",
     "sessionId": "6536ce47-699c-4e07-bb3c-6312f8789222",
     "content": (
-        '{'
+        "{"
         '"task_id":"b7f6f80",'
         '"tool_use_id":"call_67306ff6dd1a4e6c8b50055e",'
         '"description":"Search for addressing_style config",'
         '"task_type":"local_bash"'
-        '}'
+        "}"
     ),
 }
 
@@ -45,8 +45,8 @@ SAMPLE_QUEUE_OPERATION_POPALL: dict[str, Any] = {
 class TestQueueOperationTranscriptItem:
     """Test QueueOperationTranscriptItem model"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test creating QueueOperationTranscriptItem using model_validate with real data"""
+    def test_required_fields(self) -> None:
+        """Test creating QueueOperationTranscriptItem using model_validate"""
         item = QueueOperationTranscriptItem.model_validate(SAMPLE_QUEUE_OPERATION_ENQUEUE)
 
         assert item.type == "queue-operation"
@@ -77,8 +77,8 @@ class TestQueueOperationTranscriptItem:
 
         assert item.operation == "popAll"
 
-    def test_timestamp_parsing_real_data(self) -> None:
-        """Test ISO 8601 timestamp parsing using real data"""
+    def test_timestamp_parsing(self) -> None:
+        """Test ISO 8601 timestamp parsing"""
         item = QueueOperationTranscriptItem.model_validate(SAMPLE_QUEUE_OPERATION_ENQUEUE)
 
         import datetime
@@ -91,7 +91,7 @@ class TestQueueOperationTranscriptItem:
         assert item.timestamp.minute == 22
         assert item.timestamp.second == 3
 
-    def test_content_with_json_string_real_data(self) -> None:
+    def test_content_with_json_string(self) -> None:
         """Test content field with JSON string"""
         item = QueueOperationTranscriptItem.model_validate(SAMPLE_QUEUE_OPERATION_ENQUEUE)
 
@@ -112,7 +112,8 @@ class TestQueueOperationTranscriptItem:
 
         assert item.content is None
 
-    def test_dequeue_operation_not_found(self) -> None:
+    def test_dequeue_operation(self) -> None:
+        """Test with dequeue operation (from documentation)"""
         synthetic_data = {
             "type": "queue-operation",
             "operation": "dequeue",

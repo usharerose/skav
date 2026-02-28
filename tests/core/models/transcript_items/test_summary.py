@@ -21,8 +21,8 @@ SAMPLE_SUMMARY: dict[str, Any] = {
 class TestSummaryTranscriptItem:
     """Test SummaryTranscriptItem model"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test creating SummaryTranscriptItem using model_validate with real data"""
+    def test_required_fields(self) -> None:
+        """Test creating SummaryTranscriptItem using model_validate"""
         item = SummaryTranscriptItem.model_validate(SAMPLE_SUMMARY)
 
         assert item.type == "summary"

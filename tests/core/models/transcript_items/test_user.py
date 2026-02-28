@@ -10,6 +10,7 @@ import pytest
 
 from vibehist.core.models.contents import ToolResultContentItem
 from vibehist.core.models.messages import UserMessage
+from vibehist.core.models.tool_use_result import ToolUseResult
 from vibehist.core.models.transcript_items.user import UserTranscriptItem
 
 SAMPLE_USER_ENTRY_FULL: dict[str, Any] = {
@@ -143,12 +144,41 @@ SAMPLE_USER_ENTRY_WITH_PERMISSION_MODE_PLAN: dict[str, Any] = {
     "permissionMode": "plan",
 }
 
+SAMPLE_USER_ENTRY_WITH_TOOL_RESULT_DICT: dict[str, Any] = {
+    "parentUuid": "e26025aa-0543-4f40-a4bb-478982ae811b",
+    "isSidechain": False,
+    "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "1d3713b2-ed06-483d-a7be-92596e87e84c",
+    "version": "2.1.49",
+    "gitBranch": "master",
+    "slug": "sequential-frolicking-treasure",
+    "type": "user",
+    "message": {
+        "role": "user",
+        "content": [
+            {
+                "type": "tool_result",
+                "tool_use_id": "call_f6a268fe6491447ba11e1099",
+                "content": "Successfully read the file",
+            }
+        ],
+    },
+    "uuid": "75d41045-44bc-4156-8a04-497f2d43ad21",
+    "timestamp": "2026-02-22T14:57:42.790Z",
+    "toolUseResult": {
+        "mode": "files_with_matches",
+        "filenames": ["test/file1.py", "test/file2.py"],
+        "numFiles": 2,
+    },
+}
+
 
 class TestUserTranscriptItem:
     """Test UserTranscriptItem model validation and parsing"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test that all required fields are present using real data"""
+    def test_required_fields(self) -> None:
+        """Test that all required fields are present"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_FULL)
 
         assert entry.type == "user"
@@ -162,8 +192,8 @@ class TestUserTranscriptItem:
         assert entry.userType == "external"
         assert "VibeHist" in entry.message.content
 
-    def test_timestamp_parsing_real_data(self) -> None:
-        """Test ISO 8601 timestamp parsing using real data"""
+    def test_timestamp_parsing(self) -> None:
+        """Test ISO 8601 timestamp parsing"""
         data = {
             **SAMPLE_USER_ENTRY_WITH_ERROR,
         }
@@ -211,8 +241,8 @@ class TestUserTranscriptItem:
         assert entry.agentId == "agent-123"
         assert entry.isSidechain is True
 
-    def test_with_thinking_metadata_real_data(self) -> None:
-        """Test parsing with thinking metadata using real data"""
+    def test_with_thinking_metadata(self) -> None:
+        """Test parsing with thinking metadata"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_THINKING_METADATA)
 
         assert entry.thinkingMetadata is not None
@@ -220,15 +250,26 @@ class TestUserTranscriptItem:
         assert entry.permissionMode == "default"
         assert entry.todos == []
 
-    def test_with_tool_use_result_string_real_data(self) -> None:
-        """Test parsing with string tool use result using real data"""
+    def test_with_tool_use_result_string(self) -> None:
+        """Test parsing with string tool use result"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_ERROR)
 
         assert entry.toolUseResult == "Error: File does not exist."
         assert entry.sourceToolAssistantUUID == "e26025aa-0543-4f40-a4bb-478982ae811b"
 
-    def test_message_with_list_content_real_data(self) -> None:
-        """Test message with structured list content using real data"""
+    def test_with_tool_use_result_dict(self) -> None:
+        """Test parsing with dict tool use result"""
+        entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_TOOL_RESULT_DICT)
+
+        assert entry.toolUseResult is not None
+        assert isinstance(entry.toolUseResult, ToolUseResult)
+        assert entry.toolUseResult.mode == "files_with_matches"
+        assert entry.toolUseResult.numFiles == 2
+        assert isinstance(entry.toolUseResult.filenames, list)
+        assert "test/file1.py" in entry.toolUseResult.filenames
+
+    def test_message_with_list_content(self) -> None:
+        """Test message with structured list content"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_TOOL_RESULT)
 
         assert isinstance(entry.message.content, list)
@@ -307,14 +348,14 @@ class TestUserTranscriptItem:
         entry = UserTranscriptItem.model_validate(data)
         assert entry.parentUuid is None
 
-    def test_parent_uuid_with_value_real_data(self) -> None:
-        """Test with actual parentUuid value using real data"""
+    def test_parent_uuid_with_value(self) -> None:
+        """Test with actual parentUuid value"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_FULL)
 
         assert entry.parentUuid == "7965d3b5-a750-4fee-8da4-18e57b8bb686"
 
-    def test_parent_uuid_none_real_data(self) -> None:
-        """Test with parentUuid as None using real data"""
+    def test_parent_uuid_none(self) -> None:
+        """Test with parentUuid as None"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_THINKING_METADATA)
 
         assert entry.parentUuid is None
@@ -357,14 +398,14 @@ class TestUserTranscriptItem:
         assert item0.tool_use_id == "tool-123"
         assert item1.tool_use_id == "tool-456"
 
-    def test_slug_field_real_data(self) -> None:
-        """Test slug field using real data"""
+    def test_slug_field(self) -> None:
+        """Test slug field"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_FULL)
 
         assert entry.slug == "sequential-frolicking-treasure"
 
-    def test_is_error_in_tool_result_real_data(self) -> None:
-        """Test is_error field in tool_result content using real data"""
+    def test_is_error_in_tool_result(self) -> None:
+        """Test is_error field in tool_result content"""
         entry = UserTranscriptItem.model_validate(SAMPLE_USER_ENTRY_WITH_ERROR)
 
         assert isinstance(entry.message.content, list)

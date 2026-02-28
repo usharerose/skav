@@ -174,8 +174,8 @@ SAMPLE_SYSTEM_LOCAL_COMMAND: dict[str, Any] = {
 class TestSystemTurnDurationTranscriptItem:
     """Test SystemTurnDurationTranscriptItem model"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test creating with real data"""
+    def test_required_fields(self) -> None:
+        """Test creating SystemTurnDurationTranscriptItem"""
         item = SystemTurnDurationTranscriptItem.model_validate(SAMPLE_SYSTEM_TURN_DURATION)
 
         assert item.type == "system"
@@ -183,7 +183,7 @@ class TestSystemTurnDurationTranscriptItem:
         assert item.durationMs == 33717
         assert item.isMeta is False
 
-    def test_base_fields_real_data(self) -> None:
+    def test_base_fields(self) -> None:
         """Test base SystemTranscriptItem fields"""
         item = SystemTurnDurationTranscriptItem.model_validate(SAMPLE_SYSTEM_TURN_DURATION)
 
@@ -201,8 +201,8 @@ class TestSystemTurnDurationTranscriptItem:
 class TestSystemApiErrorTranscriptItem:
     """Test SystemApiErrorTranscriptItem model"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test creating with real data"""
+    def test_required_fields(self) -> None:
+        """Test creating SystemApiErrorTranscriptItem"""
         item = SystemApiErrorTranscriptItem.model_validate(SAMPLE_SYSTEM_API_ERROR)
 
         assert item.type == "system"
@@ -212,7 +212,7 @@ class TestSystemApiErrorTranscriptItem:
         assert item.maxRetries == 10
         assert abs(item.retryInMs - 592.058) < 0.001
 
-    def test_error_structure_real_data(self) -> None:
+    def test_error_structure(self) -> None:
         """Test error field structure"""
         item = SystemApiErrorTranscriptItem.model_validate(SAMPLE_SYSTEM_API_ERROR)
 
@@ -226,8 +226,8 @@ class TestSystemApiErrorTranscriptItem:
 class TestSystemCompactBoundaryTranscriptItem:
     """Test SystemCompactBoundaryTranscriptItem model"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test creating with real data"""
+    def test_required_fields(self) -> None:
+        """Test creating SystemCompactBoundaryTranscriptItem"""
         item = SystemCompactBoundaryTranscriptItem.model_validate(SAMPLE_SYSTEM_COMPACT_BOUNDARY)
 
         assert item.type == "system"
@@ -236,7 +236,7 @@ class TestSystemCompactBoundaryTranscriptItem:
         assert item.isMeta is False
         assert item.level == "info"
 
-    def test_compact_metadata_real_data(self) -> None:
+    def test_compact_metadata(self) -> None:
         """Test compactMetadata field"""
         item = SystemCompactBoundaryTranscriptItem.model_validate(SAMPLE_SYSTEM_COMPACT_BOUNDARY)
 
@@ -244,7 +244,7 @@ class TestSystemCompactBoundaryTranscriptItem:
         assert item.compactMetadata.trigger == "auto"
         assert item.compactMetadata.preTokens == 168213
 
-    def test_logical_parent_uuid_real_data(self) -> None:
+    def test_logical_parent_uuid(self) -> None:
         """Test logicalParentUuid field"""
         item = SystemCompactBoundaryTranscriptItem.model_validate(SAMPLE_SYSTEM_COMPACT_BOUNDARY)
 
@@ -254,8 +254,8 @@ class TestSystemCompactBoundaryTranscriptItem:
 class TestSystemMicrocompactBoundaryTranscriptItem:
     """Test SystemMicrocompactBoundaryTranscriptItem model"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test creating with real data"""
+    def test_required_fields(self) -> None:
+        """Test creating SystemMicrocompactBoundaryTranscriptItem"""
         item = SystemMicrocompactBoundaryTranscriptItem.model_validate(
             SAMPLE_SYSTEM_MICROCOMPACT_BOUNDARY
         )
@@ -265,7 +265,7 @@ class TestSystemMicrocompactBoundaryTranscriptItem:
         assert item.content == "Context microcompacted"
         assert item.isMeta is False
 
-    def test_microcompact_metadata_real_data(self) -> None:
+    def test_microcompact_metadata(self) -> None:
         """Test microcompactMetadata field"""
         item = SystemMicrocompactBoundaryTranscriptItem.model_validate(
             SAMPLE_SYSTEM_MICROCOMPACT_BOUNDARY
@@ -282,8 +282,8 @@ class TestSystemMicrocompactBoundaryTranscriptItem:
 class TestSystemStopHookSummaryTranscriptItem:
     """Test SystemStopHookSummaryTranscriptItem model"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test creating with real data"""
+    def test_required_fields(self) -> None:
+        """Test creating SystemStopHookSummaryTranscriptItem"""
         item = SystemStopHookSummaryTranscriptItem.model_validate(SAMPLE_SYSTEM_STOP_HOOK_SUMMARY)
 
         assert item.type == "system"
@@ -293,7 +293,7 @@ class TestSystemStopHookSummaryTranscriptItem:
         assert item.hasOutput is True
         assert item.preventedContinuation is False
 
-    def test_hook_infos_real_data(self) -> None:
+    def test_hook_infos(self) -> None:
         """Test hookInfos field"""
         item = SystemStopHookSummaryTranscriptItem.model_validate(SAMPLE_SYSTEM_STOP_HOOK_SUMMARY)
 
@@ -305,7 +305,7 @@ class TestSystemStopHookSummaryTranscriptItem:
         )
         assert item.hookInfos[0].durationMs is None
 
-    def test_hook_errors_real_data(self) -> None:
+    def test_hook_errors(self) -> None:
         """Test hookErrors field"""
         item = SystemStopHookSummaryTranscriptItem.model_validate(SAMPLE_SYSTEM_STOP_HOOK_SUMMARY)
 

@@ -82,12 +82,113 @@ SAMPLE_ASSISTANT_ENTRY_WITH_TOOL_USE: dict[str, Any] = {
     "timestamp": "2026-02-22T14:57:42.789Z",
 }
 
+SAMPLE_ASSISTANT_ENTRY_WITH_THINKING: dict[str, Any] = {
+    "parentUuid": "fcd3c922-f183-4fe4-9a12-357a87404ae3",
+    "isSidechain": False,
+    "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "1d3713b2-ed06-483d-a7be-92596e87e84c",
+    "version": "2.1.49",
+    "gitBranch": "master",
+    "slug": "sequential-frolicking-treasure",
+    "message": {
+        "id": "msg_2026022222573947d4e82262af4dc9",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-6",
+        "content": [
+            {
+                "type": "thinking",
+                "thinking": "I need to analyze the codebase structure to understand the requirements.",
+                "signature": "",
+            }
+        ],
+        "stop_reason": None,
+        "stop_sequence": None,
+        "usage": {
+            "input_tokens": 100,
+            "output_tokens": 50,
+        },
+    },
+    "type": "assistant",
+    "uuid": "78ea2d00-a937-4b88-a219-c8b57b5637d8",
+    "timestamp": "2026-02-22T14:57:42.790Z",
+}
+
+SAMPLE_ASSISTANT_ENTRY_WITH_SERVER_TOOL_USE: dict[str, Any] = {
+    "parentUuid": "fcd3c922-f183-4fe4-9a12-357a87404ae3",
+    "isSidechain": False,
+    "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "1d3713b2-ed06-483d-a7be-92596e87e84c",
+    "version": "2.1.49",
+    "gitBranch": "master",
+    "slug": "sequential-frolicking-treasure",
+    "message": {
+        "id": "msg_2026022222573947d4e82262af4dc10",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-6",
+        "content": [
+            {
+                "type": "server_tool_use",
+                "id": "call_127247113f964b7f8b1234567",
+                "name": "webReader",
+                "input": {"url": "https://example.com"},
+            }
+        ],
+        "stop_reason": None,
+        "stop_sequence": None,
+        "usage": {
+            "input_tokens": 200,
+            "output_tokens": 100,
+        },
+    },
+    "type": "assistant",
+    "uuid": "89ea2d00-a937-4b88-a219-c8b57b5637d9",
+    "timestamp": "2026-02-22T14:57:42.791Z",
+}
+
+SAMPLE_ASSISTANT_ENTRY_WITH_API_ERROR: dict[str, Any] = {
+    "parentUuid": "fcd3c922-f183-4fe4-9a12-357a87404ae3",
+    "isSidechain": False,
+    "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "1d3713b2-ed06-483d-a7be-92596e87e84c",
+    "version": "2.1.49",
+    "gitBranch": "master",
+    "slug": "sequential-frolicking-treasure",
+    "message": {
+        "id": "msg_2026022222573947d4e82262af4dc11",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-6",
+        "content": [
+            {
+                "type": "text",
+                "text": "An error occurred while processing your request.",
+            }
+        ],
+        "stop_reason": None,
+        "stop_sequence": None,
+        "usage": {
+            "input_tokens": 50,
+            "output_tokens": 25,
+        },
+    },
+    "type": "assistant",
+    "uuid": "90ea2d00-a937-4b88-a219-c8b57b5637d10",
+    "timestamp": "2026-02-22T14:57:42.792Z",
+    "error": "API request failed",
+    "isApiErrorMessage": True,
+}
+
 
 class TestAssistantTranscriptItem:
     """Test AssistantTranscriptItem model validation and parsing"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test that all required fields are present using real data"""
+    def test_required_fields(self) -> None:
+        """Test that all required fields are present"""
         entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY)
 
         assert entry.type == "assistant"
@@ -103,8 +204,8 @@ class TestAssistantTranscriptItem:
         assert entry.message.id == "msg_2026022222573947d4e82262af4dc8"
         assert entry.message.model == "glm-4.7"
 
-    def test_timestamp_parsing_real_data(self) -> None:
-        """Test ISO 8601 timestamp parsing using real data"""
+    def test_timestamp_parsing(self) -> None:
+        """Test ISO 8601 timestamp parsing"""
         entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY)
 
         assert isinstance(entry.timestamp, datetime.datetime)
@@ -116,14 +217,14 @@ class TestAssistantTranscriptItem:
         assert entry.timestamp.second == 42
         assert entry.timestamp.tzinfo is not None
 
-    def test_with_slug_field_real_data(self) -> None:
-        """Test slug field using real data"""
+    def test_with_slug_field(self) -> None:
+        """Test slug field"""
         entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY)
 
         assert entry.slug == "sequential-frolicking-treasure"
 
-    def test_with_agent_id_none_real_data(self) -> None:
-        """Test agentId is None by default using real data"""
+    def test_with_agent_id_none(self) -> None:
+        """Test agentId is None by default"""
         entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY)
 
         assert entry.agentId is None
@@ -152,8 +253,15 @@ class TestAssistantTranscriptItem:
 
         assert entry.error == "An error occurred"
 
-    def test_message_with_text_content_real_data(self) -> None:
-        """Test message with text content using real data"""
+    def test_with_api_error_message(self) -> None:
+        """Test with isApiErrorMessage field"""
+        entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_WITH_API_ERROR)
+
+        assert entry.isApiErrorMessage is True
+        assert entry.error == "API request failed"
+
+    def test_message_with_text_content(self) -> None:
+        """Test message with text content"""
         entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY)
 
         assert isinstance(entry.message.content, list)
@@ -161,8 +269,8 @@ class TestAssistantTranscriptItem:
         assert entry.message.content[0].type == "text"
         assert "Pydantic models" in entry.message.content[0].text
 
-    def test_message_with_tool_use_content_real_data(self) -> None:
-        """Test message with tool_use content using real data"""
+    def test_message_with_tool_use_content(self) -> None:
+        """Test message with tool_use content"""
         entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_WITH_TOOL_USE)
 
         assert isinstance(entry.message.content, list)
@@ -170,6 +278,24 @@ class TestAssistantTranscriptItem:
         assert entry.message.content[0].type == "tool_use"
         assert entry.message.content[0].id == "call_d9860daaecc9416e94d7c2f3"
         assert entry.message.content[0].name == "Read"
+
+    def test_message_with_thinking_content(self) -> None:
+        """Test message with thinking content"""
+        entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_WITH_THINKING)
+
+        assert isinstance(entry.message.content, list)
+        assert len(entry.message.content) == 1
+        assert entry.message.content[0].type == "thinking"
+        assert "analyze the codebase" in entry.message.content[0].thinking
+
+    def test_message_with_server_tool_use_content(self) -> None:
+        """Test message with server_tool_use content"""
+        entry = AssistantTranscriptItem.model_validate(SAMPLE_ASSISTANT_ENTRY_WITH_SERVER_TOOL_USE)
+
+        assert isinstance(entry.message.content, list)
+        assert len(entry.message.content) == 1
+        assert entry.message.content[0].type == "server_tool_use"
+        assert entry.message.content[0].name == "webReader"
 
     def test_invalid_user_type_rejected(self) -> None:
         """Test that invalid userType is rejected"""

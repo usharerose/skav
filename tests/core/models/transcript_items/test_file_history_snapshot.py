@@ -80,8 +80,8 @@ SAMPLE_SNAPSHOT_WITH_NULL_BACKUP_FILENAME: dict[str, Any] = {
 class TestTrackedFileBackup:
     """Test TrackedFileBackup model validation"""
 
-    def test_tracked_file_backup_with_model_validate(self) -> None:
-        """Test creating TrackedFileBackup using model_validate with real data"""
+    def test_tracked_file_backup(self) -> None:
+        """Test creating TrackedFileBackup using model_validate"""
         backup_data = SAMPLE_SNAPSHOT_WITH_TRACKED_FILE["snapshot"]["trackedFileBackups"][
             "test/conf/test_config.py"
         ]
@@ -91,8 +91,8 @@ class TestTrackedFileBackup:
         assert backup.version == 1
         assert isinstance(backup.backupTime, datetime.datetime)
 
-    def test_backup_time_parsing_real_data(self) -> None:
-        """Test ISO 8601 timestamp parsing using real data"""
+    def test_backup_time_parsing(self) -> None:
+        """Test ISO 8601 timestamp parsing"""
         backup_data = SAMPLE_SNAPSHOT_WITH_TRACKED_FILE["snapshot"]["trackedFileBackups"][
             "test/conf/test_config.py"
         ]
@@ -106,8 +106,8 @@ class TestTrackedFileBackup:
         assert backup.backupTime.second == 46
         assert backup.backupTime.tzinfo is not None
 
-    def test_version_field_real_data(self) -> None:
-        """Test version field using real data"""
+    def test_version_field(self) -> None:
+        """Test version field"""
         backup_data = SAMPLE_SNAPSHOT_VERSION_2["snapshot"]["trackedFileBackups"][
             "test/conf/test_config.py"
         ]
@@ -115,8 +115,8 @@ class TestTrackedFileBackup:
 
         assert backup.version == 2
 
-    def test_backup_filename_field_real_data(self) -> None:
-        """Test backupFileName field using real data"""
+    def test_backup_filename_field(self) -> None:
+        """Test backupFileName field"""
         backup_data = SAMPLE_SNAPSHOT_WITH_TRACKED_FILE["snapshot"]["trackedFileBackups"][
             "test/conf/test_config.py"
         ]
@@ -138,7 +138,7 @@ class TestTrackedFileBackup:
 class TestSnapshot:
     """Test Snapshot model validation"""
 
-    def test_minimal_snapshot_with_model_validate(self) -> None:
+    def test_minimal_snapshot(self) -> None:
         """Test creating minimal snapshot using model_validate"""
         snapshot_data = SAMPLE_SNAPSHOT_MINIMAL["snapshot"]
         snapshot = Snapshot.model_validate(snapshot_data)
@@ -147,8 +147,8 @@ class TestSnapshot:
         assert snapshot.trackedFileBackups == {}
         assert isinstance(snapshot.timestamp, datetime.datetime)
 
-    def test_snapshot_with_tracked_files_real_data(self) -> None:
-        """Test snapshot with tracked file backups using real data"""
+    def test_snapshot_with_tracked_files(self) -> None:
+        """Test snapshot with tracked file backups"""
         snapshot_data = SAMPLE_SNAPSHOT_WITH_TRACKED_FILE["snapshot"]
         snapshot = Snapshot.model_validate(snapshot_data)
 
@@ -160,8 +160,8 @@ class TestSnapshot:
         assert backup.backupFileName == "1a2c1563547d06e9@v1"
         assert backup.version == 1
 
-    def test_timestamp_parsing_real_data(self) -> None:
-        """Test ISO 8601 timestamp parsing using real data"""
+    def test_timestamp_parsing(self) -> None:
+        """Test ISO 8601 timestamp parsing"""
         snapshot_data = SAMPLE_SNAPSHOT_WITH_TRACKED_FILE["snapshot"]
         snapshot = Snapshot.model_validate(snapshot_data)
 
@@ -187,8 +187,8 @@ class TestSnapshot:
 class TestFileHistorySnapshotTranscriptItem:
     """Test FileHistorySnapshotTranscriptItem model validation"""
 
-    def test_required_fields_real_data(self) -> None:
-        """Test that all required fields are present using real data"""
+    def test_required_fields(self) -> None:
+        """Test that all required fields are present"""
         entry = FileHistorySnapshotTranscriptItem.model_validate(SAMPLE_SNAPSHOT_MINIMAL)
 
         assert entry.type == "file-history-snapshot"
@@ -202,34 +202,34 @@ class TestFileHistorySnapshotTranscriptItem:
 
         assert entry.type == "file-history-snapshot"
 
-    def test_is_snapshot_update_false_real_data(self) -> None:
-        """Test with isSnapshotUpdate=False using real data"""
+    def test_is_snapshot_update_false(self) -> None:
+        """Test with isSnapshotUpdate=False"""
         entry = FileHistorySnapshotTranscriptItem.model_validate(SAMPLE_SNAPSHOT_MINIMAL)
 
         assert entry.isSnapshotUpdate is False
 
-    def test_is_snapshot_update_true_real_data(self) -> None:
-        """Test with isSnapshotUpdate=True using real data"""
+    def test_is_snapshot_update_true(self) -> None:
+        """Test with isSnapshotUpdate=True"""
         entry = FileHistorySnapshotTranscriptItem.model_validate(SAMPLE_SNAPSHOT_WITH_TRACKED_FILE)
 
         assert entry.isSnapshotUpdate is True
 
-    def test_snapshot_with_empty_tracked_files_real_data(self) -> None:
-        """Test snapshot with empty trackedFileBackups using real data"""
+    def test_snapshot_with_empty_tracked_files(self) -> None:
+        """Test snapshot with empty trackedFileBackups"""
         entry = FileHistorySnapshotTranscriptItem.model_validate(SAMPLE_SNAPSHOT_MINIMAL)
 
         assert entry.snapshot.trackedFileBackups == {}
 
-    def test_snapshot_with_tracked_files_real_data(self) -> None:
-        """Test snapshot with tracked file backups using real data"""
+    def test_snapshot_with_tracked_files(self) -> None:
+        """Test snapshot with tracked file backups"""
         entry = FileHistorySnapshotTranscriptItem.model_validate(SAMPLE_SNAPSHOT_WITH_TRACKED_FILE)
 
         assert len(entry.snapshot.trackedFileBackups) == 1
         backup = entry.snapshot.trackedFileBackups["test/conf/test_config.py"]
         assert backup.version == 1
 
-    def test_message_id_field_real_data(self) -> None:
-        """Test messageId field using real data"""
+    def test_message_id_field(self) -> None:
+        """Test messageId field"""
         entry = FileHistorySnapshotTranscriptItem.model_validate(SAMPLE_SNAPSHOT_WITH_TRACKED_FILE)
 
         assert entry.messageId == "db838491-0caf-444b-a1ff-518dad7eae04"

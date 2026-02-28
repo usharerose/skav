@@ -14,7 +14,6 @@ from vibehist.core.models.transcript_items.progress import (
     SearchResultsReceivedProgressData,
 )
 
-# Real data samples from actual Claude Code transcript JSONL files
 SAMPLE_PROGRESS_BASH: dict[str, Any] = {
     "parentUuid": "78e37cc0-5a4e-42dc-a10b-4300b7dab1b0",
     "isSidechain": False,
@@ -62,7 +61,6 @@ SAMPLE_PROGRESS_HOOK: dict[str, Any] = {
     "uuid": "f9784b79-4226-4e65-8887-8b146812771b",
 }
 
-# Real agent_progress data from actual Claude Code transcript files
 SAMPLE_PROGRESS_AGENT: dict[str, Any] = {
     "parentUuid": "1daae4b7-c91b-4388-bd30-eb6f1ed2ff68",
     "isSidechain": False,
@@ -123,6 +121,28 @@ SAMPLE_PROGRESS_MCP: dict[str, Any] = {
     "timestamp": "2026-02-11T05:03:34.945Z",
 }
 
+SAMPLE_PROGRESS_MCP_COMPLETED: dict[str, Any] = {
+    "parentUuid": "8b2faf36-ba45-4d67-ae6e-7a411ddeccd8",
+    "isSidechain": False,
+    "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "64b75bb6-4eee-42bc-ad15-84c896f5fa66",
+    "version": "2.1.34",
+    "gitBranch": "master",
+    "type": "progress",
+    "data": {
+        "type": "mcp_progress",
+        "status": "completed",
+        "serverName": "gitlab",
+        "toolName": "get_branch_diffs",
+        "elapsedTimeMs": 1523,
+    },
+    "toolUseID": "call_69968db2179f4633824e1471",
+    "parentToolUseID": "call_69968db2179f4633824e1471",
+    "uuid": "1f2d700d-0818-4aad-aac4-ed8b59137e2b",
+    "timestamp": "2026-02-11T05:03:36.468Z",
+}
+
 SAMPLE_PROGRESS_SEARCH_RESULTS: dict[str, Any] = {
     "parentUuid": "444983db-e107-4945-8401-bbefbe853c73",
     "isSidechain": True,
@@ -149,8 +169,8 @@ SAMPLE_PROGRESS_SEARCH_RESULTS: dict[str, Any] = {
 class TestBashProgressData:
     """Test BashProgressData model"""
 
-    def test_bash_progress_real_data(self) -> None:
-        """Test creating BashProgressData using model_validate with real data"""
+    def test_bash_progress(self) -> None:
+        """Test creating BashProgressData using model_validate"""
         data = BashProgressData.model_validate(SAMPLE_PROGRESS_BASH["data"])
 
         assert data.type == "bash_progress"
@@ -177,8 +197,8 @@ class TestBashProgressData:
 class TestHookProgressData:
     """Test HookProgressData model"""
 
-    def test_hook_progress_real_data(self) -> None:
-        """Test creating HookProgressData using model_validate with real data"""
+    def test_hook_progress(self) -> None:
+        """Test creating HookProgressData using model_validate"""
         data = HookProgressData.model_validate(SAMPLE_PROGRESS_HOOK["data"])
 
         assert data.type == "hook_progress"
@@ -199,8 +219,8 @@ class TestHookProgressData:
 class TestAgentProgressData:
     """Test AgentProgressData model"""
 
-    def test_agent_progress_with_model_validate(self) -> None:
-        """Test creating AgentProgressData using model_validate with real data"""
+    def test_agent_progress(self) -> None:
+        """Test creating AgentProgressData using model_validate"""
         data = AgentProgressData.model_validate(SAMPLE_PROGRESS_AGENT["data"])
 
         assert data.type == "agent_progress"
@@ -226,14 +246,25 @@ class TestAgentProgressData:
 class TestMcpProgressData:
     """Test McpProgressData model"""
 
-    def test_mcp_progress_with_model_validate(self) -> None:
-        """Test creating McpProgressData using model_validate with real data"""
+    def test_mcp_progress_started(self) -> None:
+        """Test creating McpProgressData with status 'started'"""
         data = McpProgressData.model_validate(SAMPLE_PROGRESS_MCP["data"])
 
         assert data.type == "mcp_progress"
         assert data.status == "started"
         assert data.serverName == "gitlab"
         assert data.toolName == "get_branch_diffs"
+        assert data.elapsedTimeMs is None
+
+    def test_mcp_progress_completed(self) -> None:
+        """Test creating McpProgressData with status 'completed'"""
+        data = McpProgressData.model_validate(SAMPLE_PROGRESS_MCP_COMPLETED["data"])
+
+        assert data.type == "mcp_progress"
+        assert data.status == "completed"
+        assert data.serverName == "gitlab"
+        assert data.toolName == "get_branch_diffs"
+        assert data.elapsedTimeMs == 1523
 
     def test_mcp_progress_fields(self) -> None:
         """Test all McpProgressData fields"""
@@ -243,13 +274,14 @@ class TestMcpProgressData:
         assert hasattr(data, "status")
         assert hasattr(data, "serverName")
         assert hasattr(data, "toolName")
+        assert hasattr(data, "elapsedTimeMs")
 
 
 class TestSearchResultsReceivedProgressData:
     """Test SearchResultsReceivedProgressData model"""
 
-    def test_search_results_with_model_validate(self) -> None:
-        """Test creating SearchResultsReceivedProgressData using model_validate with real data"""
+    def test_search_results(self) -> None:
+        """Test creating SearchResultsReceivedProgressData using model_validate"""
         data = SearchResultsReceivedProgressData.model_validate(
             SAMPLE_PROGRESS_SEARCH_RESULTS["data"]
         )
@@ -272,8 +304,8 @@ class TestSearchResultsReceivedProgressData:
 class TestProgressTranscriptItem:
     """Test ProgressTranscriptItem model"""
 
-    def test_required_fields_real_data_bash(self) -> None:
-        """Test creating ProgressTranscriptItem with bash_progress using real data"""
+    def test_required_fields_bash(self) -> None:
+        """Test creating ProgressTranscriptItem with bash_progress"""
         item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_BASH)
 
         assert item.type == "progress"
@@ -282,16 +314,16 @@ class TestProgressTranscriptItem:
         assert item.toolUseID == "bash-progress-0"
         assert item.parentToolUseID == "call_67306ff6dd1a4e6c8b50055e"
 
-    def test_required_fields_real_data_hook(self) -> None:
-        """Test creating ProgressTranscriptItem with hook_progress using real data"""
+    def test_required_fields_hook(self) -> None:
+        """Test creating ProgressTranscriptItem with hook_progress"""
         item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_HOOK)
 
         assert item.type == "progress"
         assert item.sessionId == "f47647f9-4bd7-4b5d-8ad8-f5f64c50de57"
         assert item.uuid == "f9784b79-4226-4e65-8887-8b146812771b"
 
-    def test_base_fields_real_data(self) -> None:
-        """Test base ProgressTranscriptItem fields using real data"""
+    def test_base_fields(self) -> None:
+        """Test base ProgressTranscriptItem fields"""
         item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_BASH)
 
         assert item.version == "2.1.49"
@@ -307,8 +339,8 @@ class TestProgressTranscriptItem:
 
         assert item.type == "progress"
 
-    def test_timestamp_parsing_real_data(self) -> None:
-        """Test ISO 8601 timestamp parsing using real data"""
+    def test_timestamp_parsing(self) -> None:
+        """Test ISO 8601 timestamp parsing"""
         item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_BASH)
 
         import datetime
@@ -318,21 +350,30 @@ class TestProgressTranscriptItem:
         assert item.timestamp.month == 2
         assert item.timestamp.day == 27
 
-    def test_data_bash_progress_real_data(self) -> None:
-        """Test data field with BashProgressData using real data"""
+    def test_data_bash_progress(self) -> None:
+        """Test data field with BashProgressData"""
         item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_BASH)
 
         assert isinstance(item.data, BashProgressData)
         assert item.data.type == "bash_progress"
         assert item.data.elapsedTimeSeconds == 3
 
-    def test_data_hook_progress_real_data(self) -> None:
-        """Test data field with HookProgressData using real data"""
+    def test_data_hook_progress(self) -> None:
+        """Test data field with HookProgressData"""
         item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_HOOK)
 
         assert isinstance(item.data, HookProgressData)
         assert item.data.type == "hook_progress"
         assert item.data.hookName == "PostToolUse:Grep"
+
+    def test_data_mcp_progress_completed(self) -> None:
+        """Test data field with McpProgressData with completed status"""
+        item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_MCP_COMPLETED)
+
+        assert isinstance(item.data, McpProgressData)
+        assert item.data.type == "mcp_progress"
+        assert item.data.status == "completed"
+        assert item.data.elapsedTimeMs == 1523
 
     def test_agent_id_field(self) -> None:
         """Test agentId field - inside data for agent_progress"""
@@ -344,7 +385,7 @@ class TestProgressTranscriptItem:
         assert isinstance(item.data, AgentProgressData)
         assert item.data.agentId == "aed26bf"
 
-    def test_parent_uuid_none_real_data(self) -> None:
+    def test_parent_uuid_none(self) -> None:
         """Test with parentUuid as None"""
         item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_HOOK)
 
@@ -367,11 +408,15 @@ class TestProgressTranscriptItem:
         bash = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_BASH)
         hook = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_HOOK)
         agent = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_AGENT)
-        mcp = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_MCP)
+        mcp_started = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_MCP)
+        mcp_completed = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_MCP_COMPLETED)
         search = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_SEARCH_RESULTS)
 
         assert isinstance(bash.data, BashProgressData)
         assert isinstance(hook.data, HookProgressData)
         assert isinstance(agent.data, AgentProgressData)
-        assert isinstance(mcp.data, McpProgressData)
+        assert isinstance(mcp_started.data, McpProgressData)
+        assert mcp_started.data.status == "started"
+        assert isinstance(mcp_completed.data, McpProgressData)
+        assert mcp_completed.data.status == "completed"
         assert isinstance(search.data, SearchResultsReceivedProgressData)
