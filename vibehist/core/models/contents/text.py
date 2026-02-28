@@ -10,5 +10,4 @@ from pydantic import BaseModel
 
 class TextContentItem(BaseModel):
     type: Literal["text"] = "text"
-
     text: str

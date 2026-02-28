@@ -5,17 +5,8 @@ Document content model
 
 from typing import Literal
 
-from pydantic import BaseModel
+from .base import FileResultContentDetail
 
 
-class DocumentContentSource(BaseModel):
-    type: Literal["base64"] = "base64"
-
-    media_type: Literal["application/pdf"]
-    data: str
-
-
-class DocumentContentItem(BaseModel):
+class DocumentContentItem(FileResultContentDetail):
     type: Literal["document"] = "document"
-
-    source: DocumentContentSource

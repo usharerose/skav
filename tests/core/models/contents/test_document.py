@@ -9,7 +9,6 @@ import pytest
 
 from vibehist.core.models.contents.document import (
     DocumentContentItem,
-    DocumentContentSource,
 )
 
 SAMPLE_DOCUMENT_SOURCE: dict[str, str] = {
@@ -22,48 +21,6 @@ SAMPLE_DOCUMENT_ITEM: dict[str, Any] = {
     "type": "document",
     "source": SAMPLE_DOCUMENT_SOURCE,
 }
-
-
-class TestDocumentContentSource:
-    """Test DocumentContentSource model"""
-
-    def test_minimal_source_with_model_validate(self) -> None:
-        """Test creating document source using model_validate"""
-        source = DocumentContentSource.model_validate(SAMPLE_DOCUMENT_SOURCE)
-
-        assert source.type == "base64"
-        assert source.media_type == "application/pdf"
-        assert isinstance(source.data, str)
-
-    def test_type_default_value(self) -> None:
-        """Test that type has default value 'base64'"""
-        source_data = {
-            "media_type": "application/pdf",
-            "data": "SGVsbG8gV29ybGQ=",
-        }
-        source = DocumentContentSource.model_validate(source_data)
-
-        assert source.type == "base64"
-
-    def test_invalid_media_type_rejected(self) -> None:
-        """Test that invalid media_type is rejected"""
-        invalid_data = {
-            "type": "base64",
-            "media_type": cast(Any, "image/png"),  # Only "application/pdf" is valid
-            "data": "SGVsbG8gV29ybGQ=",
-        }
-        with pytest.raises(ValueError):
-            DocumentContentSource.model_validate(invalid_data)
-
-    def test_invalid_type_rejected(self) -> None:
-        """Test that invalid type is rejected"""
-        invalid_data = {
-            "type": cast(Any, "url"),  # Only "base64" is valid
-            "media_type": "application/pdf",
-            "data": "SGVsbG8gV29ybGQ=",
-        }
-        with pytest.raises(ValueError):
-            DocumentContentSource.model_validate(invalid_data)
 
 
 class TestDocumentContentItem:
@@ -83,6 +40,7 @@ class TestDocumentContentItem:
             "source": {
                 "media_type": "application/pdf",
                 "data": "SGVsbG8gV29ybGQ=",
+                "type": "base64",
             }
         }
         item = DocumentContentItem.model_validate(item_data)
