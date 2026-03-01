@@ -10,6 +10,11 @@ from pydantic import BaseModel
 
 class ThinkingMetadata(BaseModel):
     disabled: bool | None = None
-    level: Literal["high"] | None = None
+
+    # TODO: check the enumerable values of `level`
+    level: Literal["high"] | str | None = None
+
     maxThinkingTokens: int | None = None
-    triggers: list[Any] | None = None  # TODO: define data type of `triggers` item
+
+    # TODO: define data type of `triggers` item
+    triggers: list[Any] | None = None

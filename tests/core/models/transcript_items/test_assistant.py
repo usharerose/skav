@@ -8,6 +8,12 @@ from typing import Any
 
 import pytest
 
+from vibehist.core.models.contents import (
+    ServerToolUseContentItem,
+    TextContentItem,
+    ThinkingContentItem,
+    ToolUseContentItem,
+)
 from vibehist.core.models.transcript_items.assistant import AssistantTranscriptItem
 
 SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY: dict[str, Any] = {
@@ -266,8 +272,9 @@ class TestAssistantTranscriptItem:
 
         assert isinstance(entry.message.content, list)
         assert len(entry.message.content) == 1
-        assert entry.message.content[0].type == "text"
-        assert "Pydantic models" in entry.message.content[0].text
+        content_item, *_ = entry.message.content
+        assert isinstance(content_item, TextContentItem)
+        assert "Pydantic models" in content_item.text
 
     def test_message_with_tool_use_content(self) -> None:
         """Test message with tool_use content"""
@@ -275,9 +282,10 @@ class TestAssistantTranscriptItem:
 
         assert isinstance(entry.message.content, list)
         assert len(entry.message.content) == 1
-        assert entry.message.content[0].type == "tool_use"
-        assert entry.message.content[0].id == "call_d9860daaecc9416e94d7c2f3"
-        assert entry.message.content[0].name == "Read"
+        content_item, *_ = entry.message.content
+        assert isinstance(content_item, ToolUseContentItem)
+        assert content_item.id == "call_d9860daaecc9416e94d7c2f3"
+        assert content_item.name == "Read"
 
     def test_message_with_thinking_content(self) -> None:
         """Test message with thinking content"""
@@ -285,8 +293,9 @@ class TestAssistantTranscriptItem:
 
         assert isinstance(entry.message.content, list)
         assert len(entry.message.content) == 1
-        assert entry.message.content[0].type == "thinking"
-        assert "analyze the codebase" in entry.message.content[0].thinking
+        content_item, *_ = entry.message.content
+        assert isinstance(content_item, ThinkingContentItem)
+        assert "analyze the codebase" in content_item.thinking
 
     def test_message_with_server_tool_use_content(self) -> None:
         """Test message with server_tool_use content"""
@@ -294,9 +303,11 @@ class TestAssistantTranscriptItem:
 
         assert isinstance(entry.message.content, list)
         assert len(entry.message.content) == 1
-        assert entry.message.content[0].type == "server_tool_use"
-        assert entry.message.content[0].name == "webReader"
+        content_item, *_ = entry.message.content
+        assert isinstance(content_item, ServerToolUseContentItem)
+        assert content_item.name == "webReader"
 
+    @pytest.mark.skip(reason="TODO: implement when the enumerable values of `userType` are defined")
     def test_invalid_user_type_rejected(self) -> None:
         """Test that invalid userType is rejected"""
         data = {**SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY, "userType": "invalid"}
@@ -320,6 +331,7 @@ class TestAssistantTranscriptItem:
             "version": "1.0",
             "cwd": "/test",
             "isSidechain": False,
+            "userType": "external",
             "message": {
                 "id": "msg-test",
                 "type": "message",
@@ -334,15 +346,6 @@ class TestAssistantTranscriptItem:
         entry = AssistantTranscriptItem.model_validate(data)
         assert entry.type == "assistant"
 
-    def test_user_type_default_value(self) -> None:
-        """Test that userType field has default value 'external'"""
-        data = {
-            **SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY,
-            "userType": "external",
-        }
-        entry = AssistantTranscriptItem.model_validate(data)
-        assert entry.userType == "external"
-
     def test_git_branch_default_when_omitted(self) -> None:
         """Test that gitBranch defaults to 'HEAD' when omitted"""
         data = {
@@ -353,6 +356,7 @@ class TestAssistantTranscriptItem:
             "version": "1.0",
             "cwd": "/test",
             "isSidechain": False,
+            "userType": "external",
             "message": {
                 "id": "msg-test",
                 "type": "message",

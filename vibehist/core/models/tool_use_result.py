@@ -3,10 +3,11 @@
 Tool use result model
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from .contents import TextContentItem
 from .usage import Usage
 
 
@@ -14,15 +15,12 @@ class AnnotationItem(BaseModel):
     notes: str
 
 
-class ContentItem(BaseModel):
-    type: Literal["text"] = "text"
-    text: str
-
-
 class FileItem(BaseModel):
     filePath: str | None = None
 
-    type: Literal["image/png"] | None = None
+    # TODO: check the enumerable values of `type`
+    type: Literal["image/png"] | str | None = None
+
     base64: str | None = None
     originalSize: int | None = None
 
@@ -35,7 +33,9 @@ class FileItem(BaseModel):
 class TodoItem(BaseModel):
     activeForm: str
     content: str
-    status: Literal["completed", "in_progress", "pending"]
+
+    # TODO: check the enumerable values of `status`
+    status: Literal["completed", "in_progress", "pending"] | str
 
 
 class QuestionOptionItem(BaseModel):
@@ -61,8 +61,9 @@ class ResultItem(BaseModel):
 
 
 class StatusChange(BaseModel):
-    from_: Literal["completed", "deleted", "in_progress", "pending"] = Field(alias="from")
-    to: Literal["completed", "deleted", "in_progress", "pending"]
+    # TODO: check the enumerable values of statuses
+    from_: Literal["completed", "deleted", "in_progress", "pending"] | str = Field(alias="from")
+    to: Literal["completed", "deleted", "in_progress", "pending"] | str
 
 
 class StructuredPatch(BaseModel):
@@ -100,7 +101,10 @@ class ToolUseResult(BaseModel):
     appliedLimit: int | None = None
     backgroundTaskId: str | None = None
     commandName: str | None = None
-    content: str | list[ContentItem] | None = None
+
+    # TODO: check the enumerable values of `content` when it's a list
+    content: str | list[TextContentItem | Any] | None = None
+
     durationMs: int | None = None
     durationSeconds: float | None = None
     file: FileItem | None = None
@@ -110,7 +114,10 @@ class ToolUseResult(BaseModel):
     isAgent: bool | None = None
     isImage: bool | None = None
     message: str | None = None
-    mode: Literal["content", "files_with_matches"] | None = None
+
+    # TODO: check the enumerable values of `mode`
+    mode: Literal["content", "files_with_matches"] | str | None = None
+
     newString: str | None = None
     newTodos: list[TodoItem] | None = None
     noOutputExpected: bool | None = None
@@ -133,7 +140,10 @@ class ToolUseResult(BaseModel):
     retrieval_status: str | None = None
     returnCodeInterpretation: str | None = None
     shell_id: str | None = None
-    status: Literal["completed", "deleted", "in_progress", "pending"] | None = None
+
+    # TODO: check the enumerable values of `status`
+    status: Literal["completed", "deleted", "in_progress", "pending"] | str | None = None
+
     statusChange: StatusChange | None = None
     stderr: str | None = None
     stdout: str | None = None
@@ -145,7 +155,10 @@ class ToolUseResult(BaseModel):
     totalTokens: int | None = None
     totalToolUseCount: int | None = None
     truncated: bool | None = None
-    type: Literal["create", "image", "pdf", "text", "update"] | None = None
+
+    # TODO: check the enumerable values of `type`
+    type: Literal["create", "image", "pdf", "text", "update"] | str | None = None
+
     updatedFields: list[str] | None = None
     usage: Usage | None = None
     userModified: bool | None = None

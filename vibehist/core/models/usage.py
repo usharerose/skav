@@ -31,5 +31,7 @@ class Usage(BaseModel):
     iterations: list[Any] | None = None
 
     server_tool_use: ServerToolUse | None = None
-    service_tier: Literal["standard"] | None = None
-    speed: Literal["standard"] | None = None
+
+    # TODO: check the enumerable values of `service_tier` and `speed`
+    service_tier: Literal["standard"] | str | None = None
+    speed: Literal["standard"] | str | None = None

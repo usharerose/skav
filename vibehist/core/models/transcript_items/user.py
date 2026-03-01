@@ -25,7 +25,9 @@ class UserTranscriptItem(BaseModel):
     cwd: str
     gitBranch: str = "HEAD"
     isSidechain: bool
-    userType: Literal["external"] = "external"
+
+    # TODO: check the enumerable values of `userType`
+    userType: Literal["external"] | str
 
     message: UserMessage
 
@@ -42,7 +44,10 @@ class UserTranscriptItem(BaseModel):
     sourceToolUseID: str | None = None
     sourceToolAssistantUUID: str | None = None
     thinkingMetadata: ThinkingMetadata | None = None
+
+    # TODO: define data type of `todos` item
     todos: list[Any] | None = None
+
     # Error message when toolUseResult is a string
     toolUseResult: ToolUseResult | str | None = None
 

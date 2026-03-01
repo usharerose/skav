@@ -9,17 +9,23 @@ from pydantic import BaseModel
 
 
 class ContentSource(BaseModel):
-    type: Literal["base64"] | str  # TODO: check all of types
+    # TODO: check the enumerable values of `type`
+    type: Literal["base64"] | str
+
+    # TODO: check all of media types
     media_type: (
         Literal[
             "application/pdf",
             "image/png",
         ]
         | str
-    )  # TODO: check all of media types
+    )
+
     data: str
 
 
 class FileResultContentDetail(BaseModel):
-    type: str  # TODO: check all of types
+    # TODO: check the enumerable values of `type`
+    type: str
+
     source: ContentSource

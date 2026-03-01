@@ -75,6 +75,7 @@ SAMPLE_PROGRESS_AGENT: dict[str, Any] = {
             "type": "user",
             "message": {
                 "role": "user",
+                "type": "message",
                 "content": [
                     {
                         "type": "text",

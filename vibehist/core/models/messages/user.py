@@ -3,7 +3,7 @@
 User message model
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -16,4 +16,8 @@ from ..contents import (
 
 class UserMessage(BaseModel):
     role: Literal["user"] = "user"
-    content: str | list[DocumentContentItem | TextContentItem | ToolResultContentItem]
+
+    # TODO: check the enumerable types of `content` item when it's a list
+    content: (
+        str | list[DocumentContentItem | TextContentItem | ToolResultContentItem | dict[str, Any]]
+    )

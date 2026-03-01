@@ -12,7 +12,9 @@ from pydantic import BaseModel, field_validator
 class QueueOperationTranscriptItem(BaseModel):
     type: Literal["queue-operation"] = "queue-operation"
 
-    operation: Literal["enqueue", "dequeue", "remove", "popAll"]
+    # TODO: check the enumerable values of `operation`
+    operation: Literal["enqueue", "dequeue", "remove", "popAll"] | str
+
     sessionId: str
     timestamp: datetime.datetime
 

@@ -11,14 +11,19 @@ from pydantic import BaseModel, Field, RootModel
 
 class BaseSystemTranscriptItem(BaseModel):
     type: Literal["system"] = "system"
-    subtype: Literal[
-        "api_error",
-        "compact_boundary",
-        "local_command",
-        "microcompact_boundary",
-        "stop_hook_summary",
-        "turn_duration",
-    ]
+
+    # TODO: check the enumerable values of `subtype`
+    subtype: (
+        Literal[
+            "api_error",
+            "compact_boundary",
+            "local_command",
+            "microcompact_boundary",
+            "stop_hook_summary",
+            "turn_duration",
+        ]
+        | str
+    )
 
     sessionId: str
     parentUuid: str | None = None
@@ -29,12 +34,14 @@ class BaseSystemTranscriptItem(BaseModel):
     cwd: str
     gitBranch: str = "HEAD"
     isSidechain: bool
-    userType: Literal["external"] = "external"
+
+    # TODO: check the enumerable values of `userType`
+    userType: Literal["external"] | str
 
     slug: str | None = None
 
 
-class ApiErrorInfo(BaseModel):
+class SystemApiErrorInfo(BaseModel):
     type: Literal["api_error"] | None = None
 
     # numeric code
@@ -43,16 +50,23 @@ class ApiErrorInfo(BaseModel):
     message: str
 
 
-class ErrorMetadata(BaseModel):
-    type: Literal["error"] | None = None
+class SystemApiErrorMetadata(BaseModel):
+    # TODO: check the enumerable values of `type`
+    type: Literal["error"] | str | None = None
+
     request_id: str
-    error: ApiErrorInfo
+    error: SystemApiErrorInfo
 
 
-class Error(BaseModel):
-    cause: dict[str, Any] | None = None  # TODO: check the data type of `cause`
-    error: ErrorMetadata | None = None
+class SystemApiError(BaseModel):
+    # TODO: check the data type of `cause`
+    cause: dict[str, Any] | None = None
+
+    error: SystemApiErrorMetadata | None = None
+
+    # TODO: check the data type of `headers`
     headers: dict[str, Any] | None = None
+
     requestID: str | None = None
 
     # HTTP status code
@@ -62,17 +76,23 @@ class Error(BaseModel):
 class SystemApiErrorTranscriptItem(BaseSystemTranscriptItem):
     subtype: Literal["api_error"] = "api_error"
 
-    error: Error
-    level: Literal["error"]
+    error: SystemApiError
+
+    # TODO: check the enumerable values of `level`
+    level: Literal["error"] | str
+
     retryAttempt: int
     retryInMs: float
     maxRetries: int
 
-    cause: dict[str, Any] | None = None  # TODO: check the data type of `cause`
+    # TODO: check the data type of `cause`
+    cause: dict[str, Any] | None = None
 
 
 class CompactMetadata(BaseModel):
-    trigger: Literal["auto", "manual"]
+    # TODO: check the enumerable values of `trigger`
+    trigger: Literal["auto", "manual"] | str
+
     preTokens: int
 
 
@@ -80,9 +100,15 @@ class SystemCompactBoundaryTranscriptItem(BaseSystemTranscriptItem):
     subtype: Literal["compact_boundary"] = "compact_boundary"
 
     compactMetadata: CompactMetadata
-    content: Literal["Conversation compacted"] = "Conversation compacted"
+
+    # TODO: check the enumerable values of `content`
+    content: Literal["Conversation compacted"] | str
+
     isMeta: bool
-    level: Literal["info"] = "info"
+
+    # TODO: check the enumerable values of `level`
+    level: Literal["info"] | str
+
     logicalParentUuid: str
 
 
@@ -91,7 +117,9 @@ class SystemLocalCommandTranscriptItem(BaseSystemTranscriptItem):
 
     content: str
     isMeta: bool
-    level: Literal["info"] = "info"
+
+    # TODO: check the enumerable values of `level`
+    level: Literal["info"] | str
 
 
 class MicrocompactMetadata(CompactMetadata):
@@ -105,7 +133,10 @@ class SystemMicrocompactBoundaryTranscriptItem(BaseSystemTranscriptItem):
 
     content: str
     isMeta: bool
-    level: Literal["info"] = "info"
+
+    # TODO: check the enumerable values of `level`
+    level: Literal["info"] | str
+
     microcompactMetadata: MicrocompactMetadata
 
 
@@ -121,7 +152,10 @@ class SystemStopHookSummaryTranscriptItem(BaseSystemTranscriptItem):
     hookCount: int
     hookErrors: list[str]
     hookInfos: list[HookInfo]
-    level: Literal["suggestion"]
+
+    # TODO: check the enumerable values of `level`
+    level: Literal["suggestion"] | str
+
     preventedContinuation: bool
     stopReason: str
     toolUseID: str

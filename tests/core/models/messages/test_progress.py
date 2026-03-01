@@ -5,7 +5,7 @@ Unit tests for ProgressMessage model
 
 from typing import Any
 
-from vibehist.core.models.messages.progress import Data, ProgressMessage
+from vibehist.core.models.messages.progress import ProgressData, ProgressMessage
 
 PROGRESS_MESSAGE_BASH: dict[str, Any] = {
     "type": "progress",
@@ -61,12 +61,12 @@ PROGRESS_MESSAGE_HOOK: dict[str, Any] = {
 }
 
 
-class TestData:
-    """Test Data model (progress data)"""
+class TestProgressData:
+    """Test ProgressData model (progress data)"""
 
     def test_data_bash_progress(self) -> None:
         """Test creating Data with bash_progress type"""
-        data = Data.model_validate(PROGRESS_MESSAGE_BASH["data"])
+        data = ProgressData.model_validate(PROGRESS_MESSAGE_BASH["data"])
 
         assert data.type == "bash_progress"
         assert data.elapsedTimeSeconds == 2
@@ -76,7 +76,7 @@ class TestData:
 
     def test_data_hook_progress(self) -> None:
         """Test creating Data with hook_progress type"""
-        data = Data.model_validate(PROGRESS_MESSAGE_HOOK["data"])
+        data = ProgressData.model_validate(PROGRESS_MESSAGE_HOOK["data"])
 
         assert data.type == "hook_progress"
         assert data.output == "Running tests..."
@@ -84,7 +84,7 @@ class TestData:
 
     def test_data_fields(self) -> None:
         """Test all Data fields"""
-        data = Data.model_validate(PROGRESS_MESSAGE_NO_PARENT["data"])
+        data = ProgressData.model_validate(PROGRESS_MESSAGE_NO_PARENT["data"])
 
         assert hasattr(data, "type")
         assert hasattr(data, "elapsedTimeSeconds")
@@ -126,10 +126,10 @@ class TestProgressMessage:
         assert message.timestamp.second == 39
 
     def test_data_field(self) -> None:
-        """Test data field contains correct Data model"""
+        """Test data field contains correct ProgressData model"""
         message = ProgressMessage.model_validate(PROGRESS_MESSAGE_BASH)
 
-        assert isinstance(message.data, Data)
+        assert isinstance(message.data, ProgressData)
         assert message.data.type == "bash_progress"
         assert message.data.elapsedTimeSeconds == 2
 

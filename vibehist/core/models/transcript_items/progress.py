@@ -14,21 +14,30 @@ from ..usage import Usage
 
 
 class BaseProgressData(BaseModel):
-    type: Literal[
-        "agent_progress",
-        "bash_progress",
-        "hook_progress",
-        "mcp_progress",
-        "search_results_received",
-    ]
+    # TODO: check the enumerable values of `type`
+    type: (
+        Literal[
+            "agent_progress",
+            "bash_progress",
+            "hook_progress",
+            "mcp_progress",
+            "search_results_received",
+        ]
+        | str
+    )
 
 
-class Message(BaseModel):
-    role: Literal["user", "assistant"]
+class AgentProgressMessage(BaseModel):
+    # TODO: check the enumerable values of `role`
+    role: Literal["user", "assistant"] | str
+
     content: list[Any]
 
     id: str | None = None
-    type: Literal["message"] = "message"
+
+    # TODO: check the enumerable values of `type`
+    type: Literal["message"] | str
+
     model: str | None = None
 
     context_management: Any | None = None  # TODO: check the data type of `context_management`
@@ -37,13 +46,14 @@ class Message(BaseModel):
     usage: Usage | None = None
 
 
-class MessageMetadata(BaseModel):
-    type: Literal["user", "assistant"]
+class AgentProgressMessageMetadata(BaseModel):
+    # TODO: check the enumerable values of `type`
+    type: Literal["user", "assistant"] | str
 
     uuid: str
     timestamp: datetime.datetime
 
-    message: Message
+    message: AgentProgressMessage
     toolUseResult: str | ToolUseResult | None = None
 
     @field_validator("timestamp", mode="before")
@@ -58,8 +68,13 @@ class AgentProgressData(BaseProgressData):
     type: Literal["agent_progress"] = "agent_progress"
 
     agentId: str
-    message: MessageMetadata
-    normalizedMessages: list[AssistantMessage | AttachmentMessage | ProgressMessage | UserMessage]
+    message: AgentProgressMessageMetadata
+
+    # TODO: check the enumerable types of `normalizedMessages` item
+    normalizedMessages: list[
+        AssistantMessage | AttachmentMessage | ProgressMessage | UserMessage | Any
+    ]
+
     prompt: str
 
     # TODO: check the meaning of `resume`
@@ -90,7 +105,9 @@ class HookProgressData(BaseProgressData):
 class McpProgressData(BaseProgressData):
     type: Literal["mcp_progress"] = "mcp_progress"
 
-    status: Literal["started", "completed"]
+    # TODO: check the enumerable values of `status`
+    status: Literal["started", "completed"] | str
+
     serverName: str
     toolName: str
 
@@ -119,14 +136,18 @@ class ProgressTranscriptItem(BaseModel):
     cwd: str
     gitBranch: str = "HEAD"
     isSidechain: bool
-    userType: Literal["external"] = "external"
 
+    # TODO: check the enumerable values of `userType`
+    userType: Literal["external"] | str
+
+    # TODO: check the enumerable types of `data`
     data: (
         AgentProgressData
         | BashProgressData
         | HookProgressData
         | McpProgressData
         | SearchResultsReceivedProgressData
+        # | Any
     )
 
     agentId: str | None = None

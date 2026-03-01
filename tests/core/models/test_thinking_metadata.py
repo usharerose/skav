@@ -117,13 +117,14 @@ class TestThinkingMetadata:
 
         assert metadata.level is None
 
+    @pytest.mark.skip(reason="TODO: implement when the enumerable values of `level` are defined")
     def test_level_rejects_invalid_value(self) -> None:
         """Test that level rejects invalid values"""
         with pytest.raises(ValueError):
-            ThinkingMetadata.model_validate({"level": cast(Any, "medium")})  # Only "high" is valid
+            ThinkingMetadata.model_validate({"level": cast(Any, "medium")})
 
         with pytest.raises(ValueError):
-            ThinkingMetadata.model_validate({"level": cast(Any, "low")})  # Only "high" is valid
+            ThinkingMetadata.model_validate({"level": cast(Any, "low")})
 
     def test_max_thinking_tokens_zero_with_model_validate(self) -> None:
         """Test maxThinkingTokens with zero value using model_validate"""

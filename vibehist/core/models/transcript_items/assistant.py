@@ -23,7 +23,9 @@ class AssistantTranscriptItem(BaseModel):
     cwd: str
     gitBranch: str = "HEAD"
     isSidechain: bool
-    userType: Literal["external"] = "external"
+
+    # TODO: check the enumerable values of `userType`
+    userType: Literal["external"] | str
 
     message: AssistantMessage
 

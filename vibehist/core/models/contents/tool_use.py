@@ -13,4 +13,6 @@ class ToolUseContentItem(BaseModel):
 
     id: str
     name: str
-    input: dict[str, Any]  # TODO: check the data type of `input`
+
+    # TODO: check the data type of `input`
+    input: dict[str, Any]

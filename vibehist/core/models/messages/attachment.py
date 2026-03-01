@@ -37,8 +37,12 @@ class AttachmentMessage(BaseModel):
     uuid: str
     timestamp: datetime.datetime
 
+    # TODO: check the enumerable types of `attachment`
     attachment: (
-        CriticalSystemReminderAttachment | PlanModeReminderAttachment | TodoReminderAttachment
+        CriticalSystemReminderAttachment
+        | PlanModeReminderAttachment
+        | TodoReminderAttachment
+        | dict[str, Any]
     )
 
     @field_validator("timestamp", mode="before")

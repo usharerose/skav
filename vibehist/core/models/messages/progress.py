@@ -9,15 +9,19 @@ from typing import Literal
 from pydantic import BaseModel, field_validator
 
 
-class Data(BaseModel):
-    type: Literal[
-        "agent_progress",
-        "bash_progress",
-        "hook_progress",
-        "mcp_progress",
-        "search_results_received",
-        "waiting_for_task",
-    ]
+class ProgressData(BaseModel):
+    # TODO: check the enumerable values of `type`
+    type: (
+        Literal[
+            "agent_progress",
+            "bash_progress",
+            "hook_progress",
+            "mcp_progress",
+            "search_results_received",
+            "waiting_for_task",
+        ]
+        | str
+    )
 
     elapsedTimeSeconds: int
     fullOutput: str
@@ -33,7 +37,7 @@ class ProgressMessage(BaseModel):
     parentToolUseID: str | None = None
     toolUseID: str
 
-    data: Data
+    data: ProgressData
 
     @field_validator("timestamp", mode="before")
     @classmethod

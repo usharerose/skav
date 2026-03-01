@@ -3,7 +3,7 @@
 Assistant message model
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -23,16 +23,21 @@ class AssistantMessage(BaseModel):
 
     id: str
     model: str
-    stop_reason: Literal["end_turn", "stop_sequence", "tool_use"] | None
+
+    # TODO: check the enumerable values of `stop_reason`
+    stop_reason: Literal["end_turn", "stop_sequence", "tool_use"] | str | None
+
     stop_sequence: str | None
     usage: Usage
 
+    # TODO: check the enumerable types of `content` item
     content: list[
         ServerToolUseContentItem
         | TextContentItem
         | ToolResultContentItem
         | ThinkingContentItem
         | ToolUseContentItem
+        | dict[str, Any]
     ]
 
     container: None = None
