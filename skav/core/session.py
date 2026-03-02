@@ -1,6 +1,22 @@
 #!/usr/bin/env python3
 """
-Session
+Session Management
+
+This module provides the Session class for representing and accessing
+Claude Code session data. A session encompasses all transcript files
+(main session and subagents) and tool result files for a given session UUID.
+
+The Session class aggregates data from multiple files:
+- Main session transcript: {uuid}.jsonl
+- Subagent transcripts: {uuid}/subagents/agent-{id}.jsonl
+- Tool results: {uuid}/tool_results/{tool_use_id}.json
+
+Usage:
+    >>> from skav.core import Session, ProjectStoragePath
+    >>> storage = ProjectStoragePath("/path/to/.claude/projects")
+    >>> session = Session(storage, "session-uuid")
+    >>> for item in session.iter_transcripts():
+    ...     print(item)
 """
 
 import logging
@@ -18,11 +34,26 @@ logger = logging.getLogger(__name__)
 
 
 class Session:
+    """Represents a Claude Code session with all its data.
+
+    A session aggregates transcript files (main and subagents) and tool result files.
+    Data is loaded lazily on first access to avoid unnecessary I/O.
+    """
+
     def __init__(
         self,
         storage_path: ProjectStoragePath,
         session_id: str | uuid.UUID,
     ) -> None:
+        """
+        Initialize a Session instance.
+
+        :param storage_path: Project storage path containing the session
+        :type storage_path: ProjectStoragePath
+        :param session_id: Session UUID as string or UUID object
+        :type session_id: str or uuid.UUID
+        :raises FileNotFoundError: If storage path doesn't exist
+        """
         self._storage_path: ProjectStoragePath = storage_path
         if not self._storage_path.exists():
             raise FileNotFoundError(
@@ -40,6 +71,12 @@ class Session:
 
     @property
     def exists(self) -> bool:
+        """
+        Check if the session exists in storage.
+
+        :return: True if either the session file or directory exists
+        :rtype: bool
+        """
         return any(
             [
                 os.path.exists(self.session_path()),
@@ -49,14 +86,23 @@ class Session:
 
     @property
     def session_id(self) -> str:
+        """
+        Get the session ID as a string.
+
+        :return: Session UUID as string
+        :rtype: str
+        """
         return str(self._session_id)
 
     def session_path(self, is_file: bool = True) -> str:
         """
-        :param is_file: True for session transcript file
-                        False for session directory with subagent transcript files and tool results
+        Get the filesystem path for the session.
+
+        :param is_file: If True, return path to session transcript file;
+                        If False, return path to session directory
+                        containing subagents and tool results
         :type is_file: bool
-        :return: session path
+        :return: Absolute path to the session file or directory
         :rtype: str
         """
         entry_name = f"{self._session_id}"
@@ -65,6 +111,14 @@ class Session:
         return os.path.join(str(self._storage_path), entry_name)
 
     def _load_transcript_files(self) -> None:
+        """
+        Load all transcript files for the session.
+
+        Loads the main session transcript and all subagent transcripts.
+        This method is idempotent - subsequent calls do nothing.
+
+        :raises FileNotFoundError: If session doesn't exist in storage
+        """
         if self._is_tf_loaded:
             return
 
@@ -92,6 +146,20 @@ class Session:
         self._is_tf_loaded = True
 
     def iter_transcripts(self) -> Iterator[TranscriptItemType]:
+        """
+        Iterate over all transcript items in the session.
+
+        Yields items from the main transcript and all subagent transcripts.
+
+        :return: Iterator of transcript items with proper type discrimination
+        :rtype: Iterator[TranscriptItemType]
+
+        Example::
+
+            >>> for item in session.iter_transcripts():
+            ...     if isinstance(item, AssistantTranscriptItem):
+            ...         print(f"Assistant: {item.content}")
+        """
         if not self._is_tf_loaded:
             self._load_transcript_files()
 
@@ -99,6 +167,14 @@ class Session:
             yield from tf
 
     def _load_tool_result_files(self) -> None:
+        """
+        Load all tool result files for the session.
+
+        Scans the session directory for tool result files and builds a mapping
+        from tool_use_id to ToolResultFile objects.
+
+        :raises FileNotFoundError: If session doesn't exist in storage
+        """
         if self._is_trf_loaded:
             return
 
@@ -134,6 +210,14 @@ class Session:
         )
 
     def get_tool_result_file_content(self, tool_use_id: str) -> str | None:
+        """
+        Get the content of a tool result file by tool_use_id.
+
+        :param tool_use_id: The tool use ID to look up
+        :type tool_use_id: str
+        :return: The tool result content, or None if not found
+        :rtype: str or None
+        """
         if not self._is_trf_loaded:
             self._load_tool_result_files()
 

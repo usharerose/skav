@@ -1,6 +1,29 @@
 #!/usr/bin/env python3
 """
-Tool use result model
+Tool Use Result Models
+
+This module defines comprehensive Pydantic models for tool execution results
+in Claude Code transcripts. When a tool is executed (Bash, Read, Write, etc.),
+the result is captured and validated against these models.
+
+The models include:
+    - ToolUseResult: Main container for all tool execution results
+    - FileItem: File-related information (path, type, content)
+    - TodoItem: Task/todo item status tracking
+    - QuestionItem: User prompt questions for AskUserQuestion tool
+    - StatusChange: Task status transitions
+    - StructuredPatch: File diff/patch information
+    - TaskSubagent/TaskTodoWrite: Background task information
+
+ToolUseResult contains fields for:
+    - Execution status (success, interrupted, return code)
+    - Output (stdout, stderr, content)
+    - Duration (durationMs, totalDurationMs)
+    - File changes (file, filePath, filenames, structuredPatch)
+    - Task management (newTodos, oldTodos, taskId, status)
+    - User interactions (annotations, answers, questions)
+    - Usage information (totalTokens, usage)
+    - And many more tool-specific fields
 """
 
 from typing import Any, Literal

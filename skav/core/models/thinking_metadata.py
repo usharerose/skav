@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 """
-Thinking metadata model
+Thinking Metadata Models
+
+This module defines Pydantic models for thinking-related metadata in Claude Code
+transcripts. Thinking mode allows Claude to show its reasoning process before
+producing the final response.
+
+The metadata includes:
+    - disabled: Whether thinking is disabled for this interaction
+    - level: Thinking intensity level (e.g., "high")
+    - maxThinkingTokens: Maximum tokens allowed for thinking
+    - triggers: Conditions that trigger thinking mode
 """
 
 from typing import Any, Literal
