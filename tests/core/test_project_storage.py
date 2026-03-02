@@ -10,6 +10,17 @@ import uuid
 
 import pytest
 
+from tests.core.fixtures.sample_transcript_items import (
+    generate_minimal_assistant,
+    generate_minimal_user,
+    generate_sample_assistant,
+    generate_sample_user,
+)
+from vibehist.core.models.contents.text import TextContentItem
+from vibehist.core.models.transcript_items import (
+    AssistantTranscriptItem,
+    UserTranscriptItem,
+)
 from vibehist.core.project_storage import ProjectStorage
 from vibehist.core.project_storage_path import ProjectStoragePath
 
@@ -326,10 +337,18 @@ class TestIterTranscriptItems:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        first_user_uuid, second_user_uuid = str(uuid.uuid4()), str(uuid.uuid4())
+        assistant_uuid = str(uuid.uuid4())
         lines = [
-            {"type": "user", "content": "hello"},
-            {"type": "assistant", "content": "hi"},
-            {"type": "user", "content": "bye"},
+            generate_sample_user(content="hello", user_uuid=first_user_uuid),
+            generate_sample_assistant(
+                content="hi", assistant_uuid=assistant_uuid, parent_uuid=first_user_uuid
+            ),
+            generate_sample_user(
+                content="bye",
+                user_uuid=second_user_uuid,
+                parent_uuid=assistant_uuid,
+            ),
         ]
         pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in lines))
 
@@ -337,9 +356,13 @@ class TestIterTranscriptItems:
         items = list(storage.iter_transcript_items())
 
         assert len(items) == 3
-        assert items[0]["type"] == "user"
-        assert items[1]["content"] == "hi"
-        assert items[2]["type"] == "user"
+        first, second, third = items
+        assert isinstance(first, UserTranscriptItem)
+        assert isinstance(second, AssistantTranscriptItem)
+        assert isinstance(third, UserTranscriptItem)
+        assistant_tf_message_content_item, *_ = second.message.content
+        assert isinstance(assistant_tf_message_content_item, TextContentItem)
+        assert "hi" in assistant_tf_message_content_item.text
 
     def test_iter_transcript_items_multiple_sessions(
         self,
@@ -347,23 +370,41 @@ class TestIterTranscriptItems:
         session_id: uuid.UUID,
         session_id2: uuid.UUID,
     ) -> None:
-        session_file1 = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        lines1 = [{"type": "user", "id": 1}, {"type": "assistant", "id": 2}]
-        pathlib.Path(session_file1).write_text("\n".join(json.dumps(line) for line in lines1))
-
-        session_file2 = os.path.join(str(made_project_storage_path_obj), f"{session_id2}.jsonl")
-        lines2 = [
-            {"type": "user", "id": 3},
-            {"type": "assistant", "id": 4},
-            {"type": "user", "id": 5},
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        user_uuid = str(uuid.uuid4())
+        assistant_uuid = str(uuid.uuid4())
+        lines = [
+            generate_minimal_user(user_uuid=user_uuid),
+            generate_minimal_assistant(assistant_uuid=assistant_uuid, parent_uuid=user_uuid),
         ]
-        pathlib.Path(session_file2).write_text("\n".join(json.dumps(line) for line in lines2))
+        pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in lines))
+
+        another_session_file = os.path.join(
+            str(made_project_storage_path_obj), f"{session_id2}.jsonl"
+        )
+        second_user_uuid = str(uuid.uuid4())
+        another_assistant_uuid = str(uuid.uuid4())
+        third_user_uuid = str(uuid.uuid4())
+        another_lines = [
+            generate_minimal_user(user_uuid=second_user_uuid),
+            generate_minimal_assistant(
+                assistant_uuid=another_assistant_uuid,
+                parent_uuid=second_user_uuid,
+            ),
+            generate_minimal_user(user_uuid=third_user_uuid),
+        ]
+        pathlib.Path(another_session_file).write_text(
+            "\n".join(json.dumps(line) for line in another_lines),
+        )
 
         storage = ProjectStorage(made_project_storage_path_obj)
         items = list(storage.iter_transcript_items())
 
         assert len(items) == 5
-        assert set(item["id"] for item in items) == {1, 2, 3, 4, 5}
+        user_items = [item for item in items if isinstance(item, UserTranscriptItem)]
+        assert len(user_items) == 3
+        uuids = {item.uuid for item in user_items}
+        assert uuids == {user_uuid, second_user_uuid, third_user_uuid}
 
     def test_iter_transcript_items_with_subagents(
         self,
@@ -371,7 +412,12 @@ class TestIterTranscriptItems:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        main_lines = [{"type": "main", "id": 1}, {"type": "main", "id": 2}]
+        first_user_uuid = str(uuid.uuid4())
+        second_user_uuid = str(uuid.uuid4())
+        main_lines = [
+            generate_minimal_user(user_uuid=first_user_uuid),
+            generate_minimal_user(user_uuid=second_user_uuid),
+        ]
         pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in main_lines))
 
         session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
@@ -379,16 +425,17 @@ class TestIterTranscriptItems:
         os.makedirs(subagents_dir, exist_ok=True)
 
         agent_file = os.path.join(subagents_dir, "agent-task-123.jsonl")
-        agent_lines = [{"type": "agent", "id": 3}, {"type": "agent", "id": 4}]
+        first_assistant_uuid = str(uuid.uuid4())
+        second_assistant_uuid = str(uuid.uuid4())
+        agent_lines = [
+            generate_minimal_assistant(assistant_uuid=first_assistant_uuid),
+            generate_minimal_assistant(assistant_uuid=second_assistant_uuid),
+        ]
         pathlib.Path(agent_file).write_text("\n".join(json.dumps(line) for line in agent_lines))
 
         storage = ProjectStorage(made_project_storage_path_obj)
-        item_mapping = {item["id"]: item for item in storage.iter_transcript_items()}
-        assert len(item_mapping) == 4
-        assert item_mapping[1]["type"] == "main"
-        assert item_mapping[2]["type"] == "main"
-        assert item_mapping[3]["type"] == "agent"
-        assert item_mapping[4]["type"] == "agent"
+        items = list(storage.iter_transcript_items())
+        assert len(items) == 4
 
     def test_iter_transcript_items_lazy_evaluation(
         self,
@@ -396,7 +443,7 @@ class TestIterTranscriptItems:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        lines = [{"type": f"message_{i}", "id": i} for i in range(100)]
+        lines = [generate_minimal_user(content=f"message_{i}") for i in range(100)]
         pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in lines))
 
         storage = ProjectStorage(made_project_storage_path_obj)
@@ -409,8 +456,7 @@ class TestIterTranscriptItems:
             first_ten.append(item)
 
         assert len(first_ten) == 10
-        assert first_ten[0]["id"] == 0
-        assert first_ten[9]["id"] == 9
+        assert all(isinstance(item, UserTranscriptItem) for item in first_ten)
 
     def test_iter_transcript_items_preserves_data_types(
         self,
@@ -418,29 +464,19 @@ class TestIterTranscriptItems:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        data = {
-            "string": "text",
-            "number": 42,
-            "float": 3.14,
-            "bool": True,
-            "null": None,
-            "array": [1, 2, 3],
-            "nested": {"key": "value"},
-        }
+        data = generate_minimal_user(content="test")
         pathlib.Path(session_file).write_text(json.dumps(data))
 
         storage = ProjectStorage(made_project_storage_path_obj)
         items = list(storage.iter_transcript_items())
 
         assert len(items) == 1
-        actual = items[0]
-        assert actual["string"] == "text"
-        assert actual["number"] == 42
-        assert actual["float"] == 3.14
-        assert actual["bool"] is True
-        assert actual["null"] is None
-        assert actual["array"] == [1, 2, 3]
-        assert actual["nested"] == {"key": "value"}
+        tf_item, *_ = items
+        assert isinstance(tf_item, UserTranscriptItem)
+        assert tf_item.type == "user"
+        assert tf_item.message.content == "test"
+        assert tf_item.sessionId == "12345678-1234-1234-1234-123456789abc"
+        assert tf_item.isSidechain is False
 
     def test_iter_transcript_items_malformed_json_skipped(
         self,
@@ -449,15 +485,20 @@ class TestIterTranscriptItems:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        content = '{"type": "user"}\ninvalid json\n{"type": "assistant"}'
+        user_uuid = str(uuid.uuid4())
+        content = (
+            f"{json.dumps(generate_minimal_user(user_uuid=user_uuid))}"
+            f"\ninvalid json\n{json.dumps(generate_minimal_assistant())}"
+        )
         pathlib.Path(session_file).write_text(content)
 
         storage = ProjectStorage(made_project_storage_path_obj)
         items = list(storage.iter_transcript_items())
 
         assert len(items) == 2
-        assert items[0]["type"] == "user"
-        assert items[1]["type"] == "assistant"
+        first, second = items
+        assert isinstance(first, UserTranscriptItem)
+        assert isinstance(second, AssistantTranscriptItem)
 
         assert any("Failed to parse" in record.message for record in caplog.records)
 
@@ -467,17 +508,21 @@ class TestIterTranscriptItems:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        lines = [{"type": "user", "id": 1}, {"type": "assistant", "id": 2}]
+        user_uuid = str(uuid.uuid4())
+        lines = [
+            generate_minimal_user(user_uuid=user_uuid),
+            generate_minimal_assistant(parent_uuid=user_uuid),
+        ]
         pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in lines))
 
         storage = ProjectStorage(made_project_storage_path_obj)
 
-        items1 = list(storage.iter_transcript_items())
-        assert len(items1) == 2
+        first_yielded_items = list(storage.iter_transcript_items())
+        assert len(first_yielded_items) == 2
 
-        items2 = list(storage.iter_transcript_items())
-        assert len(items2) == 2
-        assert items1 == items2
+        second_yielded_items = list(storage.iter_transcript_items())
+        assert len(second_yielded_items) == 2
+        assert first_yielded_items == second_yielded_items
 
     def test_iter_transcript_items_with_empty_session_files(
         self,
@@ -486,7 +531,10 @@ class TestIterTranscriptItems:
         session_id2: uuid.UUID,
     ) -> None:
         session_file1 = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        pathlib.Path(session_file1).write_text('{"type": "user", "id": 1}')
+        user_uuid = str(uuid.uuid4())
+        pathlib.Path(session_file1).write_text(
+            json.dumps(generate_minimal_user(user_uuid=user_uuid))
+        )
 
         session_file2 = os.path.join(str(made_project_storage_path_obj), f"{session_id2}.jsonl")
         pathlib.Path(session_file2).write_text("")
@@ -495,7 +543,8 @@ class TestIterTranscriptItems:
         items = list(storage.iter_transcript_items())
 
         assert len(items) == 1
-        assert items[0]["id"] == 1
+        tf_item, *_ = items
+        assert isinstance(tf_item, UserTranscriptItem)
 
 
 class TestGetToolResultFileContent:

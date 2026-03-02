@@ -7,8 +7,8 @@ import logging
 import os
 import uuid
 from collections.abc import Iterator
-from typing import Any
 
+from .models.transcript_items import TranscriptItemType
 from .project_storage_path import ProjectStoragePath
 from .session import Session
 
@@ -77,7 +77,7 @@ class ProjectStorage:
             self._load_sessions()
         return self._session_mapping.get(session_id, None)
 
-    def iter_transcript_items(self) -> Iterator[dict[str, Any]]:
+    def iter_transcript_items(self) -> Iterator[TranscriptItemType]:
         for session in self.sessions:
             yield from session.iter_transcripts()
 

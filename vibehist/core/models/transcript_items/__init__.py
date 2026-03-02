@@ -3,6 +3,8 @@
 Claude Code local type-specific transcript models
 """
 
+from pydantic import RootModel
+
 from .assistant import AssistantTranscriptItem
 from .file_history_snapshot import FileHistorySnapshotTranscriptItem
 from .progress import ProgressTranscriptItem
@@ -32,5 +34,27 @@ __all__ = [
     "SystemStopHookSummaryTranscriptItem",
     "SystemTurnDurationTranscriptItem",
     "SystemSyntheticTranscriptItem",
+    "TranscriptItemType",
     "UserTranscriptItem",
+    "WrappedTranscriptItem",
 ]
+
+
+TranscriptItemType = (
+    AssistantTranscriptItem
+    | FileHistorySnapshotTranscriptItem
+    | ProgressTranscriptItem
+    | QueueOperationTranscriptItem
+    | SummaryTranscriptItem
+    | SystemApiErrorTranscriptItem
+    | SystemCompactBoundaryTranscriptItem
+    | SystemLocalCommandTranscriptItem
+    | SystemMicrocompactBoundaryTranscriptItem
+    | SystemStopHookSummaryTranscriptItem
+    | SystemTurnDurationTranscriptItem
+    | SystemSyntheticTranscriptItem
+    | UserTranscriptItem
+)
+
+
+WrappedTranscriptItem = RootModel[TranscriptItemType]

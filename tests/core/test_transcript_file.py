@@ -10,6 +10,16 @@ import uuid
 
 import pytest
 
+from tests.core.fixtures.sample_transcript_items import (
+    generate_minimal_assistant,
+    generate_minimal_user,
+    generate_sample_assistant,
+    generate_sample_user,
+)
+from vibehist.core.models.transcript_items import (
+    AssistantTranscriptItem,
+    UserTranscriptItem,
+)
 from vibehist.core.project_storage_path import ProjectStoragePath
 from vibehist.core.transcript_file import TranscriptFile
 
@@ -102,7 +112,7 @@ class TestTranscriptFileInit:
         transcript_path: pathlib.Path,
     ) -> None:
         """Test that initialization is lazy and doesn't load the file."""
-        transcript_path.write_text('{"type": "test"}')
+        transcript_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(transcript_path)
         # File should not be loaded until we iterate
@@ -153,7 +163,7 @@ class TestTranscriptFileProperties:
         transcript_path: pathlib.Path,
     ) -> None:
         """Test that accessing path property doesn't load the file."""
-        transcript_path.write_text('{"type": "test"}')
+        transcript_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(transcript_path)
         _ = tf.path
@@ -177,24 +187,34 @@ class TestTranscriptFileIterItems:
         self,
         transcript_path: pathlib.Path,
     ) -> None:
-        data = {"type": "user", "content": "hello"}
+        data = generate_minimal_user(content="hello")
         transcript_path.write_text(json.dumps(data))
 
         tf = TranscriptFile(transcript_path)
         items = list(item for item in tf)
 
         assert len(items) == 1
-        actual, *_ = items
-        assert actual == data
+        tf_item, *_ = items
+        assert isinstance(tf_item, UserTranscriptItem)
+        assert tf_item.message.content == "hello"
 
     def test_iter_items_multiple_lines(
         self,
         transcript_path: pathlib.Path,
     ) -> None:
+        first_user_uuid, second_user_uuid = str(uuid.uuid4()), str(uuid.uuid4())
+        assistant_uuid = str(uuid.uuid4())
+
         lines = [
-            {"type": "user", "content": "hello"},
-            {"type": "assistant", "content": "hi"},
-            {"type": "user", "content": "bye"},
+            generate_sample_user(content="hello", user_uuid=first_user_uuid),
+            generate_sample_assistant(
+                content="hi", assistant_uuid=assistant_uuid, parent_uuid=first_user_uuid
+            ),
+            generate_sample_user(
+                content="bye",
+                user_uuid=second_user_uuid,
+                parent_uuid=assistant_uuid,
+            ),
         ]
         transcript_path.write_text("\n".join(json.dumps(line) for line in lines))
 
@@ -202,30 +222,42 @@ class TestTranscriptFileIterItems:
         items = list(item for item in tf)
 
         assert len(items) == 3
-        first, second, third = items
-        assert first["type"] == "user"
-        assert second["type"] == "assistant"
-        assert third["content"] == "bye"
+        first_tf_item, second_tf_item, third_tf_item = items
+        assert isinstance(first_tf_item, UserTranscriptItem)
+        assert first_tf_item.type == "user"
+        assert isinstance(second_tf_item, AssistantTranscriptItem)
+        assert second_tf_item.type == "assistant"
+        assert isinstance(third_tf_item, UserTranscriptItem)
+        assert third_tf_item.message.content == "bye"
 
     def test_iter_items_skip_empty_lines(
         self,
         transcript_path: pathlib.Path,
     ) -> None:
-        content = '\n\n{"type": "user"}\n\n\n{"type": "assistant"}\n\n'
+        user_uuid = str(uuid.uuid4())
+        content = (
+            f"\n\n{json.dumps(generate_minimal_user(user_uuid=user_uuid))}"
+            f"\n\n\n{json.dumps(generate_minimal_assistant(parent_uuid=user_uuid))}\n\n"
+        )
         transcript_path.write_text(content)
 
         tf = TranscriptFile(transcript_path)
         items = list(item for item in tf)
 
         assert len(items) == 2
-        assert items[0]["type"] == "user"
-        assert items[1]["type"] == "assistant"
+        first_tf_item, second_tf_item = items
+        assert isinstance(first_tf_item, UserTranscriptItem)
+        assert isinstance(second_tf_item, AssistantTranscriptItem)
 
     def test_iter_items_skip_whitespace_lines(
         self,
         transcript_path: pathlib.Path,
     ) -> None:
-        content = '{"type": "user"}\n   \n\t\n{"type": "assistant"}\n'
+        user_uuid = str(uuid.uuid4())
+        content = (
+            f"{json.dumps(generate_minimal_user(user_uuid=user_uuid))}"
+            f"\n   \n\t\n{json.dumps(generate_minimal_assistant(parent_uuid=user_uuid))}\n"
+        )
         transcript_path.write_text(content)
 
         tf = TranscriptFile(transcript_path)
@@ -238,16 +270,20 @@ class TestTranscriptFileIterItems:
         transcript_path: pathlib.Path,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        content = '{"type": "user"}\nnot json\n{"type": "assistant"}'
+        user_uuid = str(uuid.uuid4())
+        content = (
+            f"{json.dumps(generate_minimal_user(user_uuid=user_uuid))}"
+            f"\nnot json\n{json.dumps(generate_minimal_assistant(parent_uuid=user_uuid))}"
+        )
         transcript_path.write_text(content)
 
         tf = TranscriptFile(transcript_path)
         items = list(item for item in tf)
 
         assert len(items) == 2
-        first, second = items
-        assert first["type"] == "user"
-        assert second["type"] == "assistant"
+        first_tf_item, second_tf_item = items
+        assert isinstance(first_tf_item, UserTranscriptItem)
+        assert isinstance(second_tf_item, AssistantTranscriptItem)
 
         assert any("Failed to parse" in record.message for record in caplog.records)
 
@@ -266,36 +302,30 @@ class TestTranscriptFileIterItems:
         self,
         transcript_path: pathlib.Path,
     ) -> None:
-        data = {
-            "string": "text",
-            "number": 42,
-            "float": 3.14,
-            "bool": True,
-            "null": None,
-            "array": [1, 2, 3],
-            "nested": {"key": "value"},
-        }
+        data = generate_minimal_user(content="test")
         transcript_path.write_text(json.dumps(data))
 
         tf = TranscriptFile(transcript_path)
         items = list(item for item in tf)
 
         assert len(items) == 1
-        actual, *_ = items
-        assert actual["string"] == "text"
-        assert actual["number"] == 42
-        assert actual["float"] == 3.14
-        assert actual["bool"] is True
-        assert actual["null"] is None
-        assert actual["array"] == [1, 2, 3]
-        assert actual["nested"] == {"key": "value"}
+        actual_tf_item, *_ = items
+        assert isinstance(actual_tf_item, UserTranscriptItem)
+        assert actual_tf_item.message.content == "test"
+        assert actual_tf_item.sessionId == "12345678-1234-1234-1234-123456789abc"
+        assert actual_tf_item.isSidechain is False
+        assert actual_tf_item.userType == "external"
 
     def test_iter_items_multiple_times_uses_cache(
         self,
         transcript_path: pathlib.Path,
     ) -> None:
         """Test that multiple iterations use cached data (lazy loading)."""
-        content = '{"type": "user"}\n{"type": "assistant"}'
+        user_uuid = str(uuid.uuid4())
+        content = (
+            f"{json.dumps(generate_minimal_user(user_uuid=user_uuid))}"
+            f"\n{json.dumps(generate_minimal_assistant(parent_uuid=user_uuid))}"
+        )
         transcript_path.write_text(content)
 
         tf = TranscriptFile(transcript_path)
@@ -310,7 +340,7 @@ class TestTranscriptFileIterItems:
         transcript_path: pathlib.Path,
     ) -> None:
         """Test that iteration sets the _is_loaded flag."""
-        transcript_path.write_text('{"type": "test"}')
+        transcript_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(transcript_path)
         assert tf._is_loaded is False
@@ -324,7 +354,7 @@ class TestTranscriptFileIterItems:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that file is only loaded once even with multiple iterations."""
-        transcript_path.write_text('{"type": "test"}')
+        transcript_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(transcript_path)
         load_count = 0
@@ -351,50 +381,44 @@ class TestTranscriptFileEdgeCases:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "unicode.jsonl"
-        data = {
-            "emoji": "😀🎉",
-            "chinese": "你好世界",
-            "arabic": "مرحبا",
-            "russian": "Привет",
-        }
+        data = generate_minimal_user(content="你好世界 😀🎉 مرحبا Привет")
         file_path.write_text(json.dumps(data), encoding="utf-8")
 
         tf = TranscriptFile(file_path)
         items = list(item for item in tf)
 
         assert len(items) == 1
-        actual, *_ = items
-        assert actual["emoji"] == "😀🎉"
-        assert actual["chinese"] == "你好世界"
+        actual_tf_item, *_ = items
+        assert isinstance(actual_tf_item, UserTranscriptItem)
+        assert "你好世界" in actual_tf_item.message.content
+        assert "😀🎉" in actual_tf_item.message.content
 
     def test_special_characters_in_json(
         self,
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "special.jsonl"
-        data = {
-            "newline": "line1\nline2",
-            "tab": "col1\tcol2",
-            "quote": 'He said "hello"',
-            "backslash": "path\\to\\file",
-        }
+        data = generate_minimal_user(
+            content='line1\nline2\tcol1\tcol2 He said "hello" path\\to\\file'
+        )
         file_path.write_text(json.dumps(data))
 
         tf = TranscriptFile(file_path)
         items = list(item for item in tf)
 
         assert len(items) == 1
-        actual, *_ = items
-        assert "\n" in actual["newline"]
-        assert "\t" in actual["tab"]
-        assert '"' in actual["quote"]
+        actual_tf_item, *_ = items
+        assert isinstance(actual_tf_item, UserTranscriptItem)
+        assert "\n" in actual_tf_item.message.content
+        assert "\t" in actual_tf_item.message.content
+        assert '"' in actual_tf_item.message.content
 
     def test_file_with_bom(
         self,
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "bom.jsonl"
-        data = {"type": "user"}
+        data = generate_minimal_user()
         file_path.write_bytes(b"\xef\xbb\xbf" + json.dumps(data).encode("utf-8"))
 
         tf = TranscriptFile(file_path)
@@ -408,17 +432,23 @@ class TestTranscriptFileEdgeCases:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         file_path = tmp_path / "multi_malformed.jsonl"
-        content = '{"type": "user"}\nbad1\n{"type": "assistant"}\nbad2\nbad3\n{"type": "user"}\n'
+        user_uuid_1 = str(uuid.uuid4())
+        user_uuid_2 = str(uuid.uuid4())
+        content = (
+            f"{json.dumps(generate_minimal_user(user_uuid=user_uuid_1))}"
+            f"\nbad1\n{json.dumps(generate_minimal_assistant(parent_uuid=user_uuid_1))}"
+            f"\nbad2\nbad3\n{json.dumps(generate_minimal_user(user_uuid=user_uuid_2))}\n"
+        )
         file_path.write_text(content)
 
         tf = TranscriptFile(file_path)
         items = list(item for item in tf)
 
         assert len(items) == 3
-        first, second, third = items
-        assert first["type"] == "user"
-        assert second["type"] == "assistant"
-        assert third["type"] == "user"
+        first_tf_item, second_tf_item, third_tf_item = items
+        assert isinstance(first_tf_item, UserTranscriptItem)
+        assert isinstance(second_tf_item, AssistantTranscriptItem)
+        assert isinstance(third_tf_item, UserTranscriptItem)
 
         parse_errors = [r for r in caplog.records if "Failed to parse" in r.message]
         assert len(parse_errors) == 3
@@ -428,7 +458,11 @@ class TestTranscriptFileEdgeCases:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "trailing.jsonl"
-        content = '{"type": "user"}\n{"type": "assistant"}\n\n'
+        user_uuid = str(uuid.uuid4())
+        content = (
+            f"{json.dumps(generate_minimal_user(user_uuid=user_uuid))}"
+            f"\n{json.dumps(generate_minimal_assistant(parent_uuid=user_uuid))}\n\n"
+        )
         file_path.write_text(content)
 
         tf = TranscriptFile(file_path)
@@ -457,7 +491,12 @@ class TestTranscriptFileLazyLoading:
         transcript_path: pathlib.Path,
     ) -> None:
         """Test that content is loaded once and cached for subsequent iterations."""
-        transcript_path.write_text('{"type": "user"}\n{"type": "assistant"}')
+        user_uuid = str(uuid.uuid4())
+        content = (
+            f"{json.dumps(generate_minimal_user(user_uuid=user_uuid))}"
+            f"\n{json.dumps(generate_minimal_assistant(parent_uuid=user_uuid))}"
+        )
+        transcript_path.write_text(content)
         tf = TranscriptFile(transcript_path)
 
         first_items = list(tf)
@@ -471,7 +510,7 @@ class TestTranscriptFileLazyLoading:
         transcript_path: pathlib.Path,
     ) -> None:
         """Test that accessing properties doesn't trigger file loading."""
-        transcript_path.write_text('{"type": "test"}')
+        transcript_path.write_text(json.dumps(generate_minimal_user()))
         tf = TranscriptFile(transcript_path)
 
         _ = tf.path
@@ -487,7 +526,7 @@ class TestTranscriptFileLazyLoading:
         transcript_path: pathlib.Path,
     ) -> None:
         """Test that iteration triggers file loading."""
-        transcript_path.write_text('{"type": "test"}')
+        transcript_path.write_text(json.dumps(generate_minimal_user()))
         tf = TranscriptFile(transcript_path)
 
         assert tf._is_loaded is False
@@ -502,7 +541,7 @@ class TestTranscriptFileIdentifiers:
         session_id: uuid.UUID,
     ) -> None:
         file_path = tmp_path / f"{session_id}.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -516,7 +555,7 @@ class TestTranscriptFileIdentifiers:
         session_id: uuid.UUID,
         agent_id: str,
     ) -> None:
-        subagent_transcript_path.write_text('{"type": "test"}')
+        subagent_transcript_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(subagent_transcript_path)
 
@@ -532,7 +571,7 @@ class TestTranscriptFileIdentifiers:
         nested_dir = tmp_path / "some" / "deep" / "path"
         nested_dir.mkdir(parents=True)
         file_path = nested_dir / f"{session_id}.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -545,7 +584,7 @@ class TestTranscriptFileIdentifiers:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "not-a-uuid.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -558,7 +597,7 @@ class TestTranscriptFileIdentifiers:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "550e8400-e29b-41d4.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -573,7 +612,7 @@ class TestTranscriptFileIdentifiers:
         subagent_dir = tmp_path / str(session_id) / "subagents"
         subagent_dir.mkdir(parents=True)
         file_path = subagent_dir / "agent-.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -587,7 +626,7 @@ class TestTranscriptFileIdentifiers:
         session_id: uuid.UUID,
     ) -> None:
         file_path = tmp_path / f"{session_id}.jsonl"
-        file_path.write_text('{"type": "user"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -599,7 +638,7 @@ class TestTranscriptFileIdentifiers:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "simple-name.jsonl"
-        file_path.write_text('{"type": "user"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -611,7 +650,7 @@ class TestTranscriptFileIdentifiers:
         session_id: uuid.UUID,
         agent_id: str,
     ) -> None:
-        subagent_transcript_path.write_text('{"type": "assistant"}')
+        subagent_transcript_path.write_text(json.dumps(generate_minimal_assistant()))
 
         tf = TranscriptFile(subagent_transcript_path)
 
@@ -624,7 +663,7 @@ class TestTranscriptFileIdentifiers:
         session_id: uuid.UUID,
     ) -> None:
         file_path = tmp_path / f"{session_id}.jsonl"
-        file_path.write_text('{"type": "user"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -634,7 +673,7 @@ class TestTranscriptFileIdentifiers:
         self,
         subagent_transcript_path: pathlib.Path,
     ) -> None:
-        subagent_transcript_path.write_text('{"type": "test"}')
+        subagent_transcript_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(subagent_transcript_path)
 
@@ -646,7 +685,7 @@ class TestTranscriptFileIdentifiers:
         session_id: uuid.UUID,
     ) -> None:
         file_path = tmp_path / f"{session_id}.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -657,7 +696,7 @@ class TestTranscriptFileIdentifiers:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "random-file.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -669,7 +708,7 @@ class TestTranscriptFileIdentifiers:
     ) -> None:
         session_id = "550E8400-E29B-41D4-A716-446655440000"
         file_path = tmp_path / f"{session_id}.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -682,7 +721,7 @@ class TestTranscriptFileIdentifiers:
     ) -> None:
         session_id = "550E8400-e29b-41d4-A716-446655440000"
         file_path = tmp_path / f"{session_id}.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -698,7 +737,7 @@ class TestTranscriptFileIdentifiers:
         subagent_dir = tmp_path / str(session_id) / "subagents"
         subagent_dir.mkdir(parents=True)
         file_path = subagent_dir / f"agent-{agent_id}.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -713,7 +752,7 @@ class TestTranscriptFileHashAndEq:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "test.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path)
         tf2 = TranscriptFile(file_path)
@@ -726,8 +765,8 @@ class TestTranscriptFileHashAndEq:
     ) -> None:
         file_path1 = tmp_path / "test1.jsonl"
         file_path2 = tmp_path / "test2.jsonl"
-        file_path1.write_text('{"type": "test"}')
-        file_path2.write_text('{"type": "test"}')
+        file_path1.write_text(json.dumps(generate_minimal_user()))
+        file_path2.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path1)
         tf2 = TranscriptFile(file_path2)
@@ -739,7 +778,7 @@ class TestTranscriptFileHashAndEq:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "test.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path)
         tf2 = TranscriptFile(file_path)
@@ -752,8 +791,8 @@ class TestTranscriptFileHashAndEq:
     ) -> None:
         file_path1 = tmp_path / "test1.jsonl"
         file_path2 = tmp_path / "test2.jsonl"
-        file_path1.write_text('{"type": "test"}')
-        file_path2.write_text('{"type": "test"}')
+        file_path1.write_text(json.dumps(generate_minimal_user()))
+        file_path2.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path1)
         tf2 = TranscriptFile(file_path2)
@@ -765,7 +804,7 @@ class TestTranscriptFileHashAndEq:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "test.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -779,8 +818,8 @@ class TestTranscriptFileHashAndEq:
     ) -> None:
         file_path1 = tmp_path / "test1.jsonl"
         file_path2 = tmp_path / "test2.jsonl"
-        file_path1.write_text('{"type": "test"}')
-        file_path2.write_text('{"type": "test"}')
+        file_path1.write_text(json.dumps(generate_minimal_user()))
+        file_path2.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path1)
         tf2 = TranscriptFile(file_path2)
@@ -799,8 +838,8 @@ class TestTranscriptFileHashAndEq:
     ) -> None:
         file_path1 = tmp_path / "test1.jsonl"
         file_path2 = tmp_path / "test2.jsonl"
-        file_path1.write_text('{"type": "test"}')
-        file_path2.write_text('{"type": "test"}')
+        file_path1.write_text(json.dumps(generate_minimal_user()))
+        file_path2.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path1)
         tf2 = TranscriptFile(file_path2)
@@ -817,9 +856,9 @@ class TestTranscriptFileHashAndEq:
         file_path1 = tmp_path / "test1.jsonl"
         file_path2 = tmp_path / "test2.jsonl"
         file_path3 = tmp_path / "test3.jsonl"
-        file_path1.write_text('{"type": "test"}')
-        file_path2.write_text('{"type": "test"}')
-        file_path3.write_text('{"type": "test"}')
+        file_path1.write_text(json.dumps(generate_minimal_user()))
+        file_path2.write_text(json.dumps(generate_minimal_user()))
+        file_path3.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path1)
         tf2 = TranscriptFile(file_path2)
@@ -845,7 +884,7 @@ class TestTranscriptFileHashAndEq:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "test.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -860,7 +899,7 @@ class TestTranscriptFileHashAndEq:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "test.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf = TranscriptFile(file_path)
 
@@ -871,7 +910,7 @@ class TestTranscriptFileHashAndEq:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "test.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path)
         tf2 = TranscriptFile(file_path)
@@ -884,7 +923,7 @@ class TestTranscriptFileHashAndEq:
         tmp_path: pathlib.Path,
     ) -> None:
         file_path = tmp_path / "test.jsonl"
-        file_path.write_text('{"type": "test"}')
+        file_path.write_text(json.dumps(generate_minimal_user()))
 
         tf1 = TranscriptFile(file_path)
         tf2 = TranscriptFile(file_path)

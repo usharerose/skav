@@ -7,9 +7,9 @@ import logging
 import os
 import uuid
 from collections.abc import Iterator
-from typing import Any
 
 from ..constants import TOOL_RESULT_FILE_EXT, TRANSCRIPT_FILE_EXT
+from .models.transcript_items import TranscriptItemType
 from .project_storage_path import ProjectStoragePath
 from .tool_result_file import ToolResultFile
 from .transcript_file import TranscriptFile
@@ -91,7 +91,7 @@ class Session:
                 self._transcript_files.add(subagent_tf)
         self._is_tf_loaded = True
 
-    def iter_transcripts(self) -> Iterator[dict[str, Any]]:
+    def iter_transcripts(self) -> Iterator[TranscriptItemType]:
         if not self._is_tf_loaded:
             self._load_transcript_files()
 
