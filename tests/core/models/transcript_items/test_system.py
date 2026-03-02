@@ -5,8 +5,6 @@ Unit tests for System transcript item models
 
 from typing import Any
 
-import pytest
-
 from vibehist.core.models.transcript_items.system import (
     BaseSystemTranscriptItem,
     CompactMetadata,
@@ -18,7 +16,7 @@ from vibehist.core.models.transcript_items.system import (
     SystemLocalCommandTranscriptItem,
     SystemMicrocompactBoundaryTranscriptItem,
     SystemStopHookSummaryTranscriptItem,
-    SystemTranscriptItem,
+    SystemSyntheticTranscriptItem,
     SystemTurnDurationTranscriptItem,
 )
 
@@ -168,6 +166,20 @@ SAMPLE_SYSTEM_LOCAL_COMMAND: dict[str, Any] = {
     "content": "Running local command: echo 'test'",
     "isMeta": False,
     "level": "info",
+}
+
+SAMPLE_SYSTEM_UNKNOWN_SUBTYPE: dict[str, Any] = {
+    "type": "system",
+    "subtype": "unknown_future_subtype",
+    "sessionId": "test-session-id",
+    "parentUuid": None,
+    "uuid": "unknown-subtype-uuid-123",
+    "timestamp": "2026-02-27T10:00:00.000Z",
+    "version": "2.1.49",
+    "cwd": "/test/workspace",
+    "gitBranch": "main",
+    "isSidechain": False,
+    "userType": "external",
 }
 
 
@@ -328,98 +340,40 @@ class TestSystemLocalCommandTranscriptItem:
         assert item.level == "info"
 
 
-class TestSystemTranscriptItem:
-    """Test SystemTranscriptItem discriminated union routing via RootModel"""
+class TestSystemSyntheticTranscriptItem:
+    """Test SystemSyntheticTranscriptItem model for unknown subtypes"""
 
-    def test_routes_to_turn_duration(self) -> None:
-        """Test RootModel routes to SystemTurnDurationTranscriptItem"""
-        item = SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_TURN_DURATION)
-        result = item.root
+    def test_unknown_subtype_accepted(self) -> None:
+        """Test that unknown subtypes are accepted by SystemSyntheticTranscriptItem"""
+        item = SystemSyntheticTranscriptItem.model_validate(SAMPLE_SYSTEM_UNKNOWN_SUBTYPE)
 
-        assert isinstance(result, SystemTurnDurationTranscriptItem)
-        assert result.subtype == "turn_duration"
-        assert hasattr(result, "durationMs")
-
-    def test_routes_to_api_error(self) -> None:
-        """Test RootModel routes to SystemApiErrorTranscriptItem"""
-        item = SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_API_ERROR)
-        result = item.root
-
-        assert isinstance(result, SystemApiErrorTranscriptItem)
-        assert result.subtype == "api_error"
-        assert hasattr(result, "error")
-        assert hasattr(result, "retryAttempt")
-
-    def test_routes_to_compact_boundary(self) -> None:
-        """Test RootModel routes to SystemCompactBoundaryTranscriptItem"""
-        item = SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_COMPACT_BOUNDARY)
-        result = item.root
-
-        assert isinstance(result, SystemCompactBoundaryTranscriptItem)
-        assert result.subtype == "compact_boundary"
-        assert hasattr(result, "compactMetadata")
-        assert hasattr(result, "logicalParentUuid")
-
-    def test_routes_to_microcompact_boundary(self) -> None:
-        """Test RootModel routes to SystemMicrocompactBoundaryTranscriptItem"""
-        item = SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_MICROCOMPACT_BOUNDARY)
-        result = item.root
-
-        assert isinstance(result, SystemMicrocompactBoundaryTranscriptItem)
-        assert result.subtype == "microcompact_boundary"
-        assert hasattr(result, "microcompactMetadata")
-
-    def test_routes_to_stop_hook_summary(self) -> None:
-        """Test RootModel routes to SystemStopHookSummaryTranscriptItem"""
-        item = SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_STOP_HOOK_SUMMARY)
-        result = item.root
-
-        assert isinstance(result, SystemStopHookSummaryTranscriptItem)
-        assert result.subtype == "stop_hook_summary"
-        assert hasattr(result, "hookInfos")
-        assert hasattr(result, "toolUseID")
-
-    def test_routes_to_local_command(self) -> None:
-        """Test RootModel routes to SystemLocalCommandTranscriptItem"""
-        item = SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_LOCAL_COMMAND)
-        result = item.root
-
-        assert isinstance(result, SystemLocalCommandTranscriptItem)
-        assert result.subtype == "local_command"
-        assert hasattr(result, "content")
+        assert item.type == "system"
+        assert item.subtype == "unknown_future_subtype"
+        assert isinstance(item, BaseSystemTranscriptItem)
 
     def test_all_inherit_from_base(self) -> None:
-        """Test all items are instances of BaseSystemTranscriptItem"""
+        """Test all system items are instances of BaseSystemTranscriptItem"""
         items = [
-            SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_TURN_DURATION).root,
-            SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_API_ERROR).root,
-            SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_COMPACT_BOUNDARY).root,
+            SystemTurnDurationTranscriptItem.model_validate(SAMPLE_SYSTEM_TURN_DURATION),
+            SystemApiErrorTranscriptItem.model_validate(SAMPLE_SYSTEM_API_ERROR),
+            SystemCompactBoundaryTranscriptItem.model_validate(SAMPLE_SYSTEM_COMPACT_BOUNDARY),
+            SystemMicrocompactBoundaryTranscriptItem.model_validate(
+                SAMPLE_SYSTEM_MICROCOMPACT_BOUNDARY
+            ),
+            SystemStopHookSummaryTranscriptItem.model_validate(SAMPLE_SYSTEM_STOP_HOOK_SUMMARY),
+            SystemLocalCommandTranscriptItem.model_validate(SAMPLE_SYSTEM_LOCAL_COMMAND),
+            SystemSyntheticTranscriptItem.model_validate(SAMPLE_SYSTEM_UNKNOWN_SUBTYPE),
         ]
 
         for item in items:
             assert isinstance(item, BaseSystemTranscriptItem)
 
-    @pytest.mark.skip(reason="TODO: implement when the enumerable values of `subtype` are defined")
-    def test_invalid_subtype_rejected(self) -> None:
-        """Test that invalid subtype is rejected"""
-        invalid_data = {
-            **SAMPLE_SYSTEM_TURN_DURATION,
-            "subtype": "invalid_subtype",
-        }
-        with pytest.raises(Exception):
-            SystemTranscriptItem.model_validate(invalid_data)
-
     def test_type_narrowing_with_isinstance(self) -> None:
         """Test type narrowing using isinstance after validation"""
-        items = [
-            SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_API_ERROR).root,
-            SystemTranscriptItem.model_validate(SAMPLE_SYSTEM_TURN_DURATION).root,
-        ]
+        # Create items directly
+        api_error = SystemApiErrorTranscriptItem.model_validate(SAMPLE_SYSTEM_API_ERROR)
+        duration = SystemTurnDurationTranscriptItem.model_validate(SAMPLE_SYSTEM_TURN_DURATION)
 
-        api_errors = [i for i in items if isinstance(i, SystemApiErrorTranscriptItem)]
-        durations = [i for i in items if isinstance(i, SystemTurnDurationTranscriptItem)]
-
-        assert len(api_errors) == 1
-        assert len(durations) == 1
-        assert hasattr(api_errors[0], "error")
-        assert hasattr(durations[0], "durationMs")
+        # Type narrowing works
+        assert hasattr(api_error, "error")
+        assert hasattr(duration, "durationMs")

@@ -4,9 +4,19 @@ System transcript item model
 """
 
 import datetime
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, ConfigDict
+
+__all__ = [
+    "SystemApiErrorTranscriptItem",
+    "SystemCompactBoundaryTranscriptItem",
+    "SystemLocalCommandTranscriptItem",
+    "SystemMicrocompactBoundaryTranscriptItem",
+    "SystemStopHookSummaryTranscriptItem",
+    "SystemTurnDurationTranscriptItem",
+    "SystemSyntheticTranscriptItem",
+]
 
 
 class BaseSystemTranscriptItem(BaseModel):
@@ -168,17 +178,11 @@ class SystemTurnDurationTranscriptItem(BaseSystemTranscriptItem):
     isMeta: bool
 
 
-SystemTranscriptItemType = Annotated[
-    SystemApiErrorTranscriptItem
-    | SystemCompactBoundaryTranscriptItem
-    | SystemLocalCommandTranscriptItem
-    | SystemMicrocompactBoundaryTranscriptItem
-    | SystemStopHookSummaryTranscriptItem
-    | SystemTurnDurationTranscriptItem,
-    Field(discriminator="subtype"),
-]
+# TODO: remove when the enumerable values of `subtype` are determined
+class SystemSyntheticTranscriptItem(BaseSystemTranscriptItem):
+    """
+    Fallback model for unknown system transcript item types.
+    """
 
-
-# This is a wrapper
-# via `root` property to get the actual model instance
-SystemTranscriptItem = RootModel[SystemTranscriptItemType]
+    subtype: str
+    model_config = ConfigDict(extra="allow")
