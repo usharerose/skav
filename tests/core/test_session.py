@@ -7,9 +7,20 @@ import json
 import os
 import pathlib
 import uuid
+from typing import cast
 
 import pytest
 
+from tests.core.fixtures.sample_transcript_items import (
+    generate_minimal_assistant,
+    generate_minimal_user,
+    generate_sample_assistant,
+    generate_sample_user,
+)
+from vibehist.core.models.transcript_items import (
+    AssistantTranscriptItem,
+    UserTranscriptItem,
+)
 from vibehist.core.project_storage_path import ProjectStoragePath
 from vibehist.core.session import Session
 
@@ -21,7 +32,7 @@ class TestSessionInit:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        pathlib.Path(session_file).write_text('{"type": "test"}')
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
 
         session = Session(made_project_storage_path_obj, session_id)
 
@@ -35,7 +46,7 @@ class TestSessionInit:
     ) -> None:
         session_id_str = str(session_id)
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id_str}.jsonl")
-        pathlib.Path(session_file).write_text('{"type": "test"}')
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
 
         session = Session(made_project_storage_path_obj, session_id_str)
 
@@ -175,10 +186,23 @@ class TestIterTranscripts:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        first_user_uuid, second_user_uuid = str(uuid.uuid4()), str(uuid.uuid4())
+        assistant_uuid = str(uuid.uuid4())
         lines = [
-            {"type": "user", "content": "hello"},
-            {"type": "assistant", "content": "hi"},
-            {"type": "user", "content": "bye"},
+            generate_sample_user(
+                content="hello",
+                user_uuid=first_user_uuid,
+            ),
+            generate_sample_assistant(
+                content="hi",
+                assistant_uuid=assistant_uuid,
+                parent_uuid=first_user_uuid,
+            ),
+            generate_sample_user(
+                content="bye",
+                user_uuid=second_user_uuid,
+                parent_uuid=assistant_uuid,
+            ),
         ]
         pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in lines))
 
@@ -186,9 +210,11 @@ class TestIterTranscripts:
         transcripts = list(session.iter_transcripts())
 
         assert len(transcripts) == 3
-        assert transcripts[0]["type"] == "user"
-        assert transcripts[1]["type"] == "assistant"
-        assert transcripts[2]["content"] == "bye"
+        first_tf_item, second_tf_item, third_tf_item = transcripts
+        assert isinstance(first_tf_item, UserTranscriptItem)
+        assert isinstance(second_tf_item, AssistantTranscriptItem)
+        assert isinstance(third_tf_item, UserTranscriptItem)
+        assert third_tf_item.message.content == "bye"
 
     def test_iter_transcripts_multiple_files(
         self,
@@ -196,7 +222,10 @@ class TestIterTranscripts:
         session_id: uuid.UUID,
     ) -> None:
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        main_lines = [{"type": "main", "id": 1}, {"type": "main", "id": 2}]
+        main_lines = [
+            generate_minimal_user(content="main 1"),
+            generate_minimal_user(content="main 2"),
+        ]
         pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in main_lines))
 
         session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
@@ -204,17 +233,19 @@ class TestIterTranscripts:
         os.makedirs(subagents_dir, exist_ok=True)
 
         agent_file = os.path.join(subagents_dir, "agent-task-123.jsonl")
-        agent_lines = [{"type": "agent", "id": 3}, {"type": "agent", "id": 4}]
+        agent_lines = [
+            generate_minimal_assistant(content="agent 1"),
+            generate_minimal_assistant(content="agent 2"),
+        ]
         pathlib.Path(agent_file).write_text("\n".join(json.dumps(line) for line in agent_lines))
 
         session = Session(made_project_storage_path_obj, session_id)
-        transcripts = {item["id"]: item for item in session.iter_transcripts()}
+        # Cast each item to access uuid attribute (only some types have uuid)
+        transcripts = {
+            cast(UserTranscriptItem, item).uuid: item for item in session.iter_transcripts()
+        }
 
         assert len(transcripts) == 4
-        assert transcripts[1]["type"] == "main"
-        assert transcripts[2]["type"] == "main"
-        assert transcripts[3]["type"] == "agent"
-        assert transcripts[4]["type"] == "agent"
 
     def test_iter_transcripts_empty_session(
         self,
@@ -247,8 +278,8 @@ class TestIterTranscripts:
     ) -> None:
         """Test that multiple iterations use cached transcript files."""
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        lines = [{"type": "test", "id": 1}]
-        pathlib.Path(session_file).write_text(json.dumps(lines[0]))
+        sample_data = generate_minimal_user(content="test")
+        pathlib.Path(session_file).write_text(json.dumps(sample_data))
 
         # Create directory to trigger _is_tf_loaded flag being set
         session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
@@ -271,7 +302,7 @@ class TestIterTranscripts:
     ) -> None:
         """Test that iteration sets the _is_tf_loaded flag when directory exists."""
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        pathlib.Path(session_file).write_text('{"type": "test"}')
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
 
         # Create directory to trigger _is_tf_loaded flag being set
         session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
@@ -295,7 +326,7 @@ class TestSessionLazyLoading:
     ) -> None:
         """Test that transcript files are only loaded once."""
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
-        pathlib.Path(session_file).write_text('{"type": "test"}')
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
 
         # Create directory to ensure _is_tf_loaded flag gets set
         session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))

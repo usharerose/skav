@@ -12,6 +12,7 @@ from typing import Any, cast
 
 from ..constants import TRANSCRIPT_FILE_EXT
 from ..utils import normalize_path
+from .models.transcript_items import TranscriptItemType, WrappedTranscriptItem
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class TranscriptFile:
             raise ValueError(
                 f"Invalid transcript file extension: {path}",
             )
-        self._items: list[dict[str, Any]] = []
+        self._items: list[TranscriptItemType] = []
         self._is_loaded: bool = False
         self._session_id, self._agent_id = self.extract_identifiers()
 
@@ -80,10 +81,16 @@ class TranscriptFile:
                         f"Failed to parse {self._path}, line {lineno}: {line[:100]}",
                     )
                     continue
-                self._items.append(cast(dict[str, Any], data))
+                data = cast(dict[str, Any], data)
+                try:
+                    wrapped_dm = WrappedTranscriptItem.model_validate(data)
+                except Exception as e:
+                    logger.exception(f"Failed to validate transcript item: {data}", exc_info=e)
+                    raise
+                self._items.append(wrapped_dm.root)
         self._is_loaded = True
 
-    def __iter__(self) -> Iterator[dict[str, Any]]:
+    def __iter__(self) -> Iterator[TranscriptItemType]:
         if not self._is_loaded:
             self._load()
         yield from self._items
