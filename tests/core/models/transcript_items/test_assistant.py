@@ -8,13 +8,13 @@ from typing import Any
 
 import pytest
 
-from vibehist.core.models.contents import (
+from skav.core.models.contents import (
     ServerToolUseContentItem,
     TextContentItem,
     ThinkingContentItem,
     ToolUseContentItem,
 )
-from vibehist.core.models.transcript_items.assistant import AssistantTranscriptItem
+from skav.core.models.transcript_items.assistant import AssistantTranscriptItem
 
 SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY: dict[str, Any] = {
     "parentUuid": "fcd3c922-f183-4fe4-9a12-357a87404ae3",
@@ -35,7 +35,7 @@ SAMPLE_ASSISTANT_ENTRY_TEXT_ONLY: dict[str, Any] = {
                 "type": "text",
                 "text": (
                     "I'll analyze the plan and implement the Pydantic models "
-                    "for VibeHist transcript JSON schema. "
+                    "for Skav transcript JSON schema. "
                     "Let me first examine the current state of the codebase."
                 ),
             }

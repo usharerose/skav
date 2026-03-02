@@ -23,9 +23,9 @@ DEFAULT_LOG_CONFIG_DICT = {
             ),
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
-        "json": {"()": "vibehist.log.JsonFormatter"},
+        "json": {"()": "skav.log.JsonFormatter"},
     },
-    "filters": {"service_name_filter": {"()": "vibehist.log.ServiceNameFilter"}},
+    "filters": {"service_name_filter": {"()": "skav.log.ServiceNameFilter"}},
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",

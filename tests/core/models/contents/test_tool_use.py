@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from vibehist.core.models.contents.tool_use import ToolUseContentItem
+from skav.core.models.contents.tool_use import ToolUseContentItem
 
 SAMPLE_TOOL_USE_READ: dict[str, Any] = {
     "type": "tool_use",

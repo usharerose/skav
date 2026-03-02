@@ -71,7 +71,7 @@ jobs:
           poetry install --with dev
 
       - name: Run mypy type check
-        run: poetry run mypy vibehist
+        run: poetry run mypy skav
 
   test:
     name: Unit tests

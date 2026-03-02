@@ -12,7 +12,7 @@ from typing import Any, Literal
 
 import pytest
 
-from vibehist.core.project_storage_path import ProjectStoragePath
+from skav.core.project_storage_path import ProjectStoragePath
 
 
 def load_event_input_fixture(

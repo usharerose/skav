@@ -5,7 +5,7 @@ Unit tests for ProgressMessage model
 
 from typing import Any
 
-from vibehist.core.models.messages.progress import ProgressData, ProgressMessage
+from skav.core.models.messages.progress import ProgressData, ProgressMessage
 
 PROGRESS_MESSAGE_BASH: dict[str, Any] = {
     "type": "progress",

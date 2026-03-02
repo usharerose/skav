@@ -1,11 +1,11 @@
 services:
-  vibehist-build:
+  skav-build:
     build:
       context: .
-    image: vibehist:${IMAGE_TAG:-latest}
+    image: skav:${IMAGE_TAG:-latest}
 
-  vibehist-run:
-    image: vibehist:${IMAGE_TAG:-latest}
+  skav-run:
+    image: skav:${IMAGE_TAG:-latest}
     volumes:
-      - .:/app/vibehist
+      - .:/app/skav
     command: tail -f /dev/null

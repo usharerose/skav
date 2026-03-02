@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "vibehist"
+name = "skav"
 version = "0.1.0"
 description = "A Python-based service for vibe coding observability"
 authors = ["Chaojie Yan <ushareroses@gmail.com>"]
 readme = "README.md"
-packages = [{include = "vibehist"}]
+packages = [{include = "skav"}]
 
 [tool.poetry.scripts]
-vibehist = "vibehist.app:cli"
+skav = "skav.app:cli"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
@@ -41,7 +41,7 @@ select = ["E", "F", "I", "W", "UP"]
 ignore = ["E501"]  # Ignore line-length (handled by formatter)
 
 [tool.ruff.lint.isort]
-known-first-party = ["vibehist"]
+known-first-party = ["skav"]
 
 [tool.ruff.format]
 quote-style = "double"

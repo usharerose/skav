@@ -5,7 +5,7 @@ Unit tests for ProgressTranscriptItem model
 
 from typing import Any
 
-from vibehist.core.models.transcript_items.progress import (
+from skav.core.models.transcript_items.progress import (
     AgentProgressData,
     BashProgressData,
     HookProgressData,

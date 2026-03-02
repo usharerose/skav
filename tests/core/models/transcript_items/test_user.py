@@ -8,10 +8,10 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.contents import ToolResultContentItem
-from vibehist.core.models.messages import UserMessage
-from vibehist.core.models.tool_use_result import ToolUseResult
-from vibehist.core.models.transcript_items.user import UserTranscriptItem
+from skav.core.models.contents import ToolResultContentItem
+from skav.core.models.messages import UserMessage
+from skav.core.models.tool_use_result import ToolUseResult
+from skav.core.models.transcript_items.user import UserTranscriptItem
 
 SAMPLE_USER_ENTRY_FULL: dict[str, Any] = {
     "uuid": "fcd3c922-f183-4fe4-9a12-357a87404ae3",
@@ -29,12 +29,12 @@ SAMPLE_USER_ENTRY_FULL: dict[str, Any] = {
         "role": "user",
         "content": (
             "Implement the following plan:\n\n"
-            "# VibeHist Transcript JSON Schema Design\n\n"
+            "# Skav Transcript JSON Schema Design\n\n"
             "## Context\n\n"
             "This document designs a comprehensive schema for Claude Code transcript JSONL data "
             "based on analysis of actual transcript data from project files\n\n"
             "The goal is to understand the structure and patterns of Claude Code transcript data "
-            "to inform the VibeHist project's data collection and analysis capabilities."
+            "to inform the Skav project's data collection and analysis capabilities."
         ),
     },
 }
@@ -190,7 +190,7 @@ class TestUserTranscriptItem:
         assert entry.gitBranch == "master"
         assert entry.isSidechain is False
         assert entry.userType == "external"
-        assert "VibeHist" in entry.message.content
+        assert "Skav" in entry.message.content
 
     def test_timestamp_parsing(self) -> None:
         """Test ISO 8601 timestamp parsing"""

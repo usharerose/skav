@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for vibehist.log module
+Unit tests for skav.log module
 """
 
 import json
@@ -8,7 +8,7 @@ import logging
 
 import pytest
 
-from vibehist.log import JsonFormatter, ServiceNameFilter, config_logging
+from skav.log import JsonFormatter, ServiceNameFilter, config_logging
 
 
 class TestServiceNameFilter:
@@ -143,17 +143,17 @@ class TestConfigLogging:
         self,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        config_logging(service_name="vibehist", debug=False)
+        config_logging(service_name="skav", debug=False)
         logger = logging.getLogger("test.logger")
         logger.info("test message")
 
         # Verify JSON output contains service_name
         for record in caplog.records:
             assert hasattr(record, "service_name")
-            assert getattr(record, "service_name", None) == "vibehist"
+            assert getattr(record, "service_name", None) == "skav"
 
     def test_config_logging_debug_mode(self) -> None:
-        config_logging(service_name="vibehist", debug=True)
+        config_logging(service_name="skav", debug=True)
         logger = logging.getLogger("test.debug")
         logger.info("debug message")
 

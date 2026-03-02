@@ -9,8 +9,8 @@ import uuid
 
 import pytest
 
-from vibehist.core.project_storage_path import ProjectStoragePath
-from vibehist.core.tool_result_file import ToolResultFile
+from skav.core.project_storage_path import ProjectStoragePath
+from skav.core.tool_result_file import ToolResultFile
 
 
 @pytest.fixture(scope="session")

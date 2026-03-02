@@ -5,7 +5,7 @@ Unit tests for System transcript item models
 
 from typing import Any
 
-from vibehist.core.models.transcript_items.system import (
+from skav.core.models.transcript_items.system import (
     BaseSystemTranscriptItem,
     CompactMetadata,
     HookInfo,
@@ -137,7 +137,7 @@ SAMPLE_SYSTEM_STOP_HOOK_SUMMARY: dict[str, Any] = {
         {
             "command": (
                 'PYTHONPATH="$CLAUDE_PROJECT_DIR" '
-                '"$CLAUDE_PROJECT_DIR"/.venv/bin/python -m vibehist.app --debug'
+                '"$CLAUDE_PROJECT_DIR"/.venv/bin/python -m skav.app --debug'
             )
         }
     ],
@@ -313,7 +313,7 @@ class TestSystemStopHookSummaryTranscriptItem:
         assert isinstance(item.hookInfos[0], HookInfo)
         assert item.hookInfos[0].command == (
             'PYTHONPATH="$CLAUDE_PROJECT_DIR" '
-            '"$CLAUDE_PROJECT_DIR"/.venv/bin/python -m vibehist.app --debug'
+            '"$CLAUDE_PROJECT_DIR"/.venv/bin/python -m skav.app --debug'
         )
         assert item.hookInfos[0].durationMs is None
 

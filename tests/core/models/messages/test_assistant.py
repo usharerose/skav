@@ -7,13 +7,13 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.contents import (
+from skav.core.models.contents import (
     ServerToolUseContentItem,
     TextContentItem,
     ThinkingContentItem,
     ToolUseContentItem,
 )
-from vibehist.core.models.messages.assistant import AssistantMessage
+from skav.core.models.messages.assistant import AssistantMessage
 
 ASSISTANT_MESSAGE_TEXT: dict[str, Any] = {
     "id": "msg_2026022410205336ab47e8f8734425",

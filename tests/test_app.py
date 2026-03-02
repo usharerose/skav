@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for vibehist.app module
+Unit tests for skav.app module
 """
 
 import io
@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from vibehist.app import main, parse_cmd_args
+from skav.app import main, parse_cmd_args
 
 
 class TestParseCmdArgs:
@@ -17,7 +17,7 @@ class TestParseCmdArgs:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr("sys.argv", ["vibehist"])
+        monkeypatch.setattr("sys.argv", ["skav"])
         args = parse_cmd_args()
         assert args.debug is False
 
@@ -25,7 +25,7 @@ class TestParseCmdArgs:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr("sys.argv", ["vibehist", "--debug"])
+        monkeypatch.setattr("sys.argv", ["skav", "--debug"])
         args = parse_cmd_args()
         assert args.debug is True
 

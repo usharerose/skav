@@ -8,7 +8,7 @@ import pathlib
 
 import pytest
 
-from vibehist.core.project_storage_path import ProjectStoragePath
+from skav.core.project_storage_path import ProjectStoragePath
 
 USER_HOME = "/home/user"
 
