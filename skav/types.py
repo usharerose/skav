@@ -1,7 +1,32 @@
 #!/usr/bin/env python3
 """
 Type definitions for Claude Code Hook events
+
+This module provides TypedDict definitions for all Claude Code hook event inputs.
+These types represent the JSON structure that Claude Code sends to hook handlers.
+
 Based on official documentation: https://code.claude.com/docs/en/hooks
+
+Type Hierarchy:
+    EventCommonInput
+    ├── EventSessionStartInput
+    ├── EventUserPromptSubmitInput
+    ├── EventPreToolUseInput
+    ├── EventPermissionRequestInput
+    ├── EventPostToolUseInput
+    ├── EventPostToolUseFailureInput
+    ├── EventNotificationInput
+    ├── EventSubagentStartInput
+    ├── EventSubagentStopInput
+    ├── EventStopInput
+    ├── EventTeammateIdleInput
+    ├── EventTaskCompletedInput
+    ├── EventPreCompactInput
+    └── EventSessionEndInput
+
+Tool Input Types:
+    Each tool (Bash, Read, Write, Edit, etc.) has its own input type definition
+    representing the parameters passed to that tool.
 """
 
 import sys
@@ -14,6 +39,20 @@ else:
 
 
 class EventCommonInput(TypedDict, total=False):
+    """Common fields present in all Claude Code hook events.
+
+    :ivar session_id: Unique identifier for the session
+    :vartype session_id: str
+    :ivar transcript_path: Path to the session's transcript file
+    :vartype transcript_path: str
+    :ivar cwd: Current working directory during the event
+    :vartype cwd: str
+    :ivar permission_mode: Permission mode in effect (may be None in some cases)
+    :vartype permission_mode: str or None
+    :ivar hook_event_name: Type of hook event being triggered
+    :vartype hook_event_name: str
+    """
+
     session_id: str
     transcript_path: str
     cwd: str
@@ -129,6 +168,16 @@ ToolInput = (
 # Hook Event Input Types
 # ============================================================================
 class EventSessionStartInput(EventCommonInput):
+    """Input for SessionStart hook event.
+
+    :ivar source: Source of the session start (startup/resume/clear/compact)
+    :vartype source: str
+    :ivar model: Model name being used (e.g., "claude-sonnet-4-6")
+    :vartype model: str
+    :ivar agent_type: Agent type if using --agent flag, None otherwise
+    :vartype agent_type: str or None
+    """
+
     source: Literal["startup", "resume", "clear", "compact"]
     model: str
     # agent_type is only present when using --agent flag
@@ -136,6 +185,12 @@ class EventSessionStartInput(EventCommonInput):
 
 
 class EventUserPromptSubmitInput(EventCommonInput):
+    """Input for UserPromptSubmit hook event.
+
+    :ivar prompt: The user's prompt text
+    :vartype prompt: str
+    """
+
     prompt: str
 
 
@@ -212,6 +267,12 @@ class EventPreCompactInput(EventCommonInput):
 
 
 class EventSessionEndInput(EventCommonInput):
+    """Input for SessionEnd hook event.
+
+    :ivar reason: Reason for session ending
+    :vartype reason: str
+    """
+
     reason: Literal[
         "clear",
         "logout",

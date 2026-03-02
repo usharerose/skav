@@ -22,6 +22,22 @@ setup:
 	@echo "✅ Setup complete!"
 	@echo "   Run 'source .venv/bin/activate' to enter the virtual environment"
 
+type-check:
+	@echo "Run 'source .venv/bin/activate' to enter the virtual environment"
+	mypy skav/ tests/
+
+test:
+	@echo "Run 'source .venv/bin/activate' to enter the virtual environment"
+	pytest -sv tests/
+
+lint:
+	@echo "Run 'source .venv/bin/activate' to enter the virtual environment"
+	ruff check .
+
+prettier:
+	@echo "Run 'source .venv/bin/activate' to enter the virtual environment"
+	ruff format --check .
+
 clean-pyc:
 	# clean all pyc files
 	find . -name '__pycache__' | xargs rm -rf | cat
