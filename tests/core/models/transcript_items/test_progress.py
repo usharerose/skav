@@ -101,6 +101,56 @@ SAMPLE_PROGRESS_AGENT: dict[str, Any] = {
     "timestamp": "2026-02-11T01:18:27.513Z",
 }
 
+SAMPLE_PROGRESS_AGENT_NO_MESSAGE_TYPE: dict[str, Any] = {
+    "parentUuid": "5b789595-3045-45a1-899b-d5a262c42aa9",
+    "isSidechain": False,
+    "userType": "external",
+    "cwd": "/Users/root/workspace/project",
+    "sessionId": "c4144c77-1a83-4ab2-9516-649eed8cf083",
+    "version": "2.1.34",
+    "gitBranch": "main",
+    "type": "progress",
+    "data": {
+        "message": {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "Explore the codebase structure of this project. "
+                            "I need to understand:\n\n"
+                            "1. The overall directory structure and main components\n"
+                            "2. Key files in each major folder\n"
+                            "3. Build and configuration files\n\n"
+                            "Focus on understanding the architecture and main functionality of the project."
+                        ),
+                    }
+                ],
+                # Note: 'type' field is missing here
+            },
+            "uuid": "881d3557-11e7-44e7-8118-3ae31519dfda",
+            "timestamp": "2026-02-12T03:16:26.991Z",
+        },
+        "normalizedMessages": [],
+        "type": "agent_progress",
+        "prompt": (
+            "Explore the codebase structure of this project. "
+            "I need to understand:\n\n"
+            "1. The overall directory structure and main components\n"
+            "2. Key files in each major folder\n"
+            "3. Build and configuration files\n\n"
+            "Focus on understanding the architecture and main functionality of the project."
+        ),
+        "agentId": "a757b6a",
+    },
+    "toolUseID": "agent_msg_20260212111623632ec340d23d4fd2",
+    "parentToolUseID": "call_2b73e681e92b4988994105ad",
+    "uuid": "c6387f88-1b29-47c7-af55-ee1657353148",
+    "timestamp": "2026-02-12T03:16:26.993Z",
+}
+
 SAMPLE_PROGRESS_MCP: dict[str, Any] = {
     "parentUuid": "8b2faf36-ba45-4d67-ae6e-7a411ddeccd8",
     "isSidechain": False,
@@ -242,6 +292,25 @@ class TestAgentProgressData:
         assert hasattr(data, "resume")
         assert hasattr(data, "message")
         assert hasattr(data, "normalizedMessages")
+
+    def test_agent_progress_message_without_type(self) -> None:
+        """Test AgentProgressMessage when type field is missing"""
+        # This should not raise an error since type is optional
+        data = AgentProgressData.model_validate(SAMPLE_PROGRESS_AGENT_NO_MESSAGE_TYPE["data"])
+
+        assert data.type == "agent_progress"
+        assert data.agentId == "a757b6a"
+        assert data.message.message.type is None
+        assert data.message.message.role == "user"
+
+    def test_agent_progress_message_with_type(self) -> None:
+        """Test AgentProgressMessage when type field is present"""
+        data = AgentProgressData.model_validate(SAMPLE_PROGRESS_AGENT["data"])
+
+        assert data.type == "agent_progress"
+        assert data.agentId == "aed26bf"
+        assert data.message.message.type == "message"
+        assert data.message.message.role == "user"
 
 
 class TestMcpProgressData:
@@ -421,3 +490,12 @@ class TestProgressTranscriptItem:
         assert isinstance(mcp_completed.data, McpProgressData)
         assert mcp_completed.data.status == "completed"
         assert isinstance(search.data, SearchResultsReceivedProgressData)
+
+    def test_agent_progress_without_message_type(self) -> None:
+        """Test agent progress when AgentProgressMessage.type is missing"""
+        item = ProgressTranscriptItem.model_validate(SAMPLE_PROGRESS_AGENT_NO_MESSAGE_TYPE)
+
+        assert item.type == "progress"
+        assert isinstance(item.data, AgentProgressData)
+        assert item.data.message.message.type is None
+        assert item.data.message.message.role == "user"

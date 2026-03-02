@@ -36,7 +36,7 @@ class AgentProgressMessage(BaseModel):
     id: str | None = None
 
     # TODO: check the enumerable values of `type`
-    type: Literal["message"] | str
+    type: Literal["message"] | str | None = None
 
     model: str | None = None
 
