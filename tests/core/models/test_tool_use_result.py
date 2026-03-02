@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.tool_use_result import (
+from skav.core.models.tool_use_result import (
     FileItem,
     QuestionItem,
     StatusChange,

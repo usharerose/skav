@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from vibehist.core.models.transcript_items.queue_operation import (
+from skav.core.models.transcript_items.queue_operation import (
     QueueOperationTranscriptItem,
 )
 

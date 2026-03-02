@@ -1,13 +1,13 @@
 .PHONY: clean-pyc setup
 
 build: clean-pyc
-	docker compose build vibehist-build
+	docker compose build skav-build
 
 run: build clean-container
-	docker compose up -d vibehist-run
+	docker compose up -d skav-run
 
 ssh:
-	docker compose exec vibehist-run /bin/sh
+	docker compose exec skav-run /bin/sh
 
 setup:
 	@command -v poetry >/dev/null 2>&1 || { \

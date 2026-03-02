@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.contents.server_tool_use import ServerToolUseContentItem
+from skav.core.models.contents.server_tool_use import ServerToolUseContentItem
 
 SAMPLE_SERVER_TOOL_USE_WEB_SEARCH: dict[str, Any] = {
     "type": "server_tool_use",

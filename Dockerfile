@@ -21,7 +21,7 @@ ENV PYTHONUNBUFFERED=1 \
 ENV PATH="$POETRY_HOME/bin:$PATH"
 
 # Set working directory
-WORKDIR /app/vibehist
+WORKDIR /app/skav
 
 COPY . .
 

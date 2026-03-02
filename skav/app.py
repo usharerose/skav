@@ -31,7 +31,7 @@ def parse_cmd_args() -> argparse.Namespace:
 
 
 def main(debug: bool = False) -> None:
-    config_logging(service_name="vibehist", debug=debug)
+    config_logging(service_name="skav", debug=debug)
     event_input: EventInput = json.load(sys.stdin)
     logger.info(f"Received event input: {json.dumps(event_input, ensure_ascii=False, indent=2)}")
     sys.exit(0)

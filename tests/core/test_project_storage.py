@@ -10,19 +10,19 @@ import uuid
 
 import pytest
 
+from skav.core.models.contents.text import TextContentItem
+from skav.core.models.transcript_items import (
+    AssistantTranscriptItem,
+    UserTranscriptItem,
+)
+from skav.core.project_storage import ProjectStorage
+from skav.core.project_storage_path import ProjectStoragePath
 from tests.core.fixtures.sample_transcript_items import (
     generate_minimal_assistant,
     generate_minimal_user,
     generate_sample_assistant,
     generate_sample_user,
 )
-from vibehist.core.models.contents.text import TextContentItem
-from vibehist.core.models.transcript_items import (
-    AssistantTranscriptItem,
-    UserTranscriptItem,
-)
-from vibehist.core.project_storage import ProjectStorage
-from vibehist.core.project_storage_path import ProjectStoragePath
 
 
 @pytest.fixture(scope="session")

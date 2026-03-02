@@ -5,7 +5,7 @@ Unit tests for AttachmentMessage model
 
 from typing import Any
 
-from vibehist.core.models.messages.attachment import (
+from skav.core.models.messages.attachment import (
     AttachmentMessage,
     CriticalSystemReminderAttachment,
     PlanModeReminderAttachment,

@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.thinking_metadata import ThinkingMetadata
+from skav.core.models.thinking_metadata import ThinkingMetadata
 
 SAMPLE_THINKING_METADATA_MAX_TOKENS = {
     "maxThinkingTokens": 31999,

@@ -10,7 +10,7 @@ import uuid
 
 import pytest
 
-from vibehist.core.project_workspace import ProjectWorkspace
+from skav.core.project_workspace import ProjectWorkspace
 
 
 @pytest.fixture(scope="session")

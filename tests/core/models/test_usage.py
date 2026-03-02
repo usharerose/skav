@@ -5,7 +5,7 @@ Unit tests for Usage model
 
 from typing import Any
 
-from vibehist.core.models.usage import CacheCreation, ServerToolUse, Usage
+from skav.core.models.usage import CacheCreation, ServerToolUse, Usage
 
 USAGE_MINIMAL: dict[str, Any] = {
     "input_tokens": 0,

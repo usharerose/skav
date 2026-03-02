@@ -7,12 +7,12 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.contents import (
+from skav.core.models.contents import (
     DocumentContentItem,
     TextContentItem,
     ToolResultContentItem,
 )
-from vibehist.core.models.messages.user import UserMessage
+from skav.core.models.messages.user import UserMessage
 
 USER_MESSAGE_STRING_CONTENT: dict[str, Any] = {
     "role": "user",

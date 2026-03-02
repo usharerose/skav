@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
 """
-Tests for vibehist.core.models.contents module
+Tests for skav.core.models.contents module
 """

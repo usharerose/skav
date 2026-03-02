@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.contents.tool_result import ToolResultContentItem
+from skav.core.models.contents.tool_result import ToolResultContentItem
 
 # Real data samples from actual Claude Code transcript JSONL files
 SAMPLE_TOOL_RESULT_SUCCESS: dict[str, Any] = {

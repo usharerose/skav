@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from vibehist.core.models.transcript_items.summary import (
+from skav.core.models.transcript_items.summary import (
     SummaryTranscriptItem,
 )
 

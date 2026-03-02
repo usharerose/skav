@@ -11,18 +11,18 @@ from typing import cast
 
 import pytest
 
+from skav.core.models.transcript_items import (
+    AssistantTranscriptItem,
+    UserTranscriptItem,
+)
+from skav.core.project_storage_path import ProjectStoragePath
+from skav.core.session import Session
 from tests.core.fixtures.sample_transcript_items import (
     generate_minimal_assistant,
     generate_minimal_user,
     generate_sample_assistant,
     generate_sample_user,
 )
-from vibehist.core.models.transcript_items import (
-    AssistantTranscriptItem,
-    UserTranscriptItem,
-)
-from vibehist.core.project_storage_path import ProjectStoragePath
-from vibehist.core.session import Session
 
 
 class TestSessionInit:

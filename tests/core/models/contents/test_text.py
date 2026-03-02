@@ -7,12 +7,12 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.contents.text import TextContentItem
+from skav.core.models.contents.text import TextContentItem
 
 SAMPLE_TEXT_CONTENT_REAL: dict[str, str] = {
     "type": "text",
     "text": (
-        "I'll analyze the plan and implement the Pydantic models for VibeHist transcript JSON schema. "
+        "I'll analyze the plan and implement the Pydantic models for Skav transcript JSON schema. "
         "Let me first examine the current state of the codebase."
     ),
 }
@@ -21,7 +21,7 @@ SAMPLE_TEXT_CONTENT_MULTILINE: dict[str, str] = {
     "type": "text",
     "text": (
         "Implement the following plan:\n\n"
-        "# VibeHist Transcript JSON Schema Design\n\n"
+        "# Skav Transcript JSON Schema Design\n\n"
         "## Context\n\n"
         "This document designs a comprehensive schema for Claude Code transcript JSONL data "
         "based on analysis of:\n"
@@ -42,7 +42,7 @@ class TestTextContentItem:
         item = TextContentItem.model_validate(SAMPLE_TEXT_CONTENT_REAL)
 
         assert item.type == "text"
-        assert "VibeHist" in item.text
+        assert "Skav" in item.text
         assert "Pydantic" in item.text
 
     def test_type_default_value(self) -> None:
@@ -63,7 +63,7 @@ class TestTextContentItem:
         item = TextContentItem.model_validate(SAMPLE_TEXT_CONTENT_MULTILINE)
 
         assert "\n" in item.text
-        assert "VibeHist" in item.text
+        assert "Skav" in item.text
         assert "## Context" in item.text
 
     def test_unicode_text_with_real_data(self) -> None:

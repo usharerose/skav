@@ -1,4 +1,4 @@
-# VibeHist
+# Skav
 
 A Python-based service for collecting and analyzing vibe coding session data through Claude Code hooks.
 

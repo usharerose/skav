@@ -5,7 +5,7 @@ Unit tests for ThinkingContentItem model
 
 import pytest
 
-from vibehist.core.models.contents.thinking import ThinkingContentItem
+from skav.core.models.contents.thinking import ThinkingContentItem
 
 SAMPLE_THINKING_CONTENT: dict[str, str] = {
     "type": "thinking",

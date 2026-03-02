@@ -8,7 +8,7 @@ import pathlib
 
 import pytest
 
-from vibehist.utils import normalize_path
+from skav.utils import normalize_path
 
 USER_HOME = "/home/user"
 

@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import pytest
 
-from vibehist.core.models.contents.document import (
+from skav.core.models.contents.document import (
     DocumentContentItem,
 )
 

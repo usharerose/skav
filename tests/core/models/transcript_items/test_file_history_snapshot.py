@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from vibehist.core.models.transcript_items.file_history_snapshot import (
+from skav.core.models.transcript_items.file_history_snapshot import (
     FileHistorySnapshotTranscriptItem,
     Snapshot,
     TrackedFileBackup,
