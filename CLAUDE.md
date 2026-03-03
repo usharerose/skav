@@ -9,7 +9,7 @@ Skav reads Claude Code's local transcript files (.jsonl) and tool results, valid
 ## Quick Start
 
 ```python
-from skav.core import ProjectWorkspace, ProjectStoragePath
+from skav.transcripts import ProjectWorkspace, ProjectStoragePath
 
 # Access all sessions in workspace
 workspace = ProjectWorkspace()  # ~/.claude/projects
@@ -57,26 +57,26 @@ Transcript Files (.jsonl) → transcript_file.py → Pydantic validation
 ### Transcript & Session
 | Module | Purpose |
 |--------|---------|
-| `core/session.py` | Session: aggregates transcripts + tool results |
-| `core/transcript_file.py` | TranscriptFile: parses .jsonl, validates items |
-| `core/tool_result_file.py` | ToolResultFile: reads tool execution outputs |
+| `transcripts/session.py` | Session: aggregates transcripts + tool results |
+| `transcripts/transcript_file.py` | TranscriptFile: parses .jsonl, validates items |
+| `transcripts/tool_result_file.py` | ToolResultFile: reads tool execution outputs |
 
 ### Storage Management
 | Module | Purpose |
 |--------|---------|
-| `core/project_workspace.py` | ProjectWorkspace: workspace directory access |
-| `core/project_storage.py` | ProjectStorage: project-level session management |
-| `core/project_storage_path.py` | ProjectStoragePath: path encoding/decoding |
+| `transcripts/project_workspace.py` | ProjectWorkspace: workspace directory access |
+| `transcripts/project_storage.py` | ProjectStorage: project-level session management |
+| `transcripts/project_storage_path.py` | ProjectStoragePath: path encoding/decoding |
 
 ### Data Models
 | Module | Purpose |
 |--------|---------|
-| `core/models/transcript_items/` | All transcript item types (User, Assistant, System, etc.) |
-| `core/models/messages/` | Message models (UserMessage, AssistantMessage, etc.) |
-| `core/models/contents/` | Content types (Text, Thinking, ToolUse, ToolResult, etc.) |
-| `core/models/tool_use_result.py` | Tool execution result models |
-| `core/models/usage.py` | Token usage and caching metadata |
-| `core/models/thinking_metadata.py` | Thinking mode configuration |
+| `transcripts/models/transcript_items/` | All transcript item types (User, Assistant, System, etc.) |
+| `transcripts/models/messages/` | Message models (UserMessage, AssistantMessage, etc.) |
+| `transcripts/models/contents/` | Content types (Text, Thinking, ToolUse, ToolResult, etc.) |
+| `transcripts/models/tool_use_result.py` | Tool execution result models |
+| `transcripts/models/usage.py` | Token usage and caching metadata |
+| `transcripts/models/thinking_metadata.py` | Thinking mode configuration |
 
 ## Development
 

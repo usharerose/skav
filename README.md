@@ -55,7 +55,7 @@ skav --help
 ## Quick Start
 
 ```python
-from skav.core import ProjectWorkspace, ProjectStoragePath
+from skav.transcripts import ProjectWorkspace, ProjectStoragePath
 
 # Access all sessions in workspace
 workspace = ProjectWorkspace()  # ~/.claude/projects

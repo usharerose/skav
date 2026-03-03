@@ -104,7 +104,7 @@ class JsonFormatter(Formatter):
             "process": 12345,
             "levelname": "INFO",
             "lineno": 42,
-            "name": "skav.core",
+            "name": "skav.transcripts",
             "message": "Processing complete"
         }
 
