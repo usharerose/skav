@@ -1,0 +1,695 @@
+#!/usr/bin/env python3
+"""
+Unit tests for Session
+"""
+
+import json
+import os
+import pathlib
+import uuid
+from typing import cast
+
+import pytest
+
+from skav.transcripts.models.transcript_items import (
+    AssistantTranscriptItem,
+    UserTranscriptItem,
+)
+from skav.transcripts.project_storage_path import ProjectStoragePath
+from skav.transcripts.session import Session
+from tests.transcripts.fixtures.sample_transcript_items import (
+    generate_minimal_assistant,
+    generate_minimal_user,
+    generate_sample_assistant,
+    generate_sample_user,
+)
+
+
+class TestSessionInit:
+    def test_init_with_uuid_session_id(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session.session_id == str(session_id)
+        assert isinstance(session._session_id, uuid.UUID)
+
+    def test_init_with_string_session_id(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_id_str = str(session_id)
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id_str}.jsonl")
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
+
+        session = Session(made_project_storage_path_obj, session_id_str)
+
+        assert session.session_id == session_id_str
+        assert isinstance(session._session_id, uuid.UUID)
+
+    def test_init_storage_path_not_exists(
+        self,
+        project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        with pytest.raises(FileNotFoundError, match="Project storage path doesn't exist"):
+            Session(project_storage_path_obj, session_id)
+
+    def test_init_session_not_exists(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session = Session(made_project_storage_path_obj, session_id)
+        assert not session.exists
+
+    def test_init_with_session_directory(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        os.makedirs(session_dir, exist_ok=True)
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session.session_id == str(session_id)
+        assert session.exists
+
+    def test_init_creates_empty_state(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        """Test that initialization creates empty internal state."""
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session._transcript_files == set()
+        assert session._is_tf_loaded is False
+        assert session._tool_result_file_mapping == {}
+        assert session._is_trf_loaded is False
+
+    def test_init_with_invalid_string_session_id(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+    ) -> None:
+        """Test that invalid session ID strings raise an error."""
+        with pytest.raises(ValueError):
+            Session(made_project_storage_path_obj, "not-a-uuid")
+
+
+class TestSessionPath:
+    def test_session_path_default_is_file(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        expected_path = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        assert session.session_path() == expected_path
+
+    def test_session_path_is_file_true(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        expected_path = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        assert session.session_path(is_file=True) == expected_path
+
+    def test_session_path_is_file_false(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        expected_path = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        os.mkdir(expected_path)
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session.session_path(is_file=False) == expected_path
+
+
+class TestSessionExists:
+    def test_exists_property_true_with_file(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session.exists is True
+
+    def test_exists_property_true_with_directory(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        os.makedirs(session_dir, exist_ok=True)
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session.exists is True
+
+    def test_exists_property_false(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session.exists is False
+
+
+class TestIterTranscripts:
+    def test_iter_transcripts_single_file(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        first_user_uuid, second_user_uuid = str(uuid.uuid4()), str(uuid.uuid4())
+        assistant_uuid = str(uuid.uuid4())
+        lines = [
+            generate_sample_user(
+                content="hello",
+                user_uuid=first_user_uuid,
+            ),
+            generate_sample_assistant(
+                content="hi",
+                assistant_uuid=assistant_uuid,
+                parent_uuid=first_user_uuid,
+            ),
+            generate_sample_user(
+                content="bye",
+                user_uuid=second_user_uuid,
+                parent_uuid=assistant_uuid,
+            ),
+        ]
+        pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in lines))
+
+        session = Session(made_project_storage_path_obj, session_id)
+        transcripts = list(session.iter_transcripts())
+
+        assert len(transcripts) == 3
+        first_tf_item, second_tf_item, third_tf_item = transcripts
+        assert isinstance(first_tf_item, UserTranscriptItem)
+        assert isinstance(second_tf_item, AssistantTranscriptItem)
+        assert isinstance(third_tf_item, UserTranscriptItem)
+        assert third_tf_item.message.content == "bye"
+
+    def test_iter_transcripts_multiple_files(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        main_lines = [
+            generate_minimal_user(content="main 1"),
+            generate_minimal_user(content="main 2"),
+        ]
+        pathlib.Path(session_file).write_text("\n".join(json.dumps(line) for line in main_lines))
+
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        subagents_dir = os.path.join(session_dir, "subagents")
+        os.makedirs(subagents_dir, exist_ok=True)
+
+        agent_file = os.path.join(subagents_dir, "agent-task-123.jsonl")
+        agent_lines = [
+            generate_minimal_assistant(content="agent 1"),
+            generate_minimal_assistant(content="agent 2"),
+        ]
+        pathlib.Path(agent_file).write_text("\n".join(json.dumps(line) for line in agent_lines))
+
+        session = Session(made_project_storage_path_obj, session_id)
+        # Cast each item to access uuid attribute (only some types have uuid)
+        transcripts = {
+            cast(UserTranscriptItem, item).uuid: item for item in session.iter_transcripts()
+        }
+
+        assert len(transcripts) == 4
+
+    def test_iter_transcripts_empty_session(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text("")
+
+        session = Session(made_project_storage_path_obj, session_id)
+        transcripts = list(session.iter_transcripts())
+
+        assert transcripts == []
+
+    def test_iter_transcripts_session_not_exists(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        """Test that iterating transcripts for non-existent session raises error."""
+        session = Session(made_project_storage_path_obj, session_id)
+
+        with pytest.raises(FileNotFoundError, match="doesn't exist in project storage"):
+            list(session.iter_transcripts())
+
+    def test_iter_transcripts_uses_cache(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        """Test that multiple iterations use cached transcript files."""
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        sample_data = generate_minimal_user(content="test")
+        pathlib.Path(session_file).write_text(json.dumps(sample_data))
+
+        # Create directory to trigger _is_tf_loaded flag being set
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        os.makedirs(session_dir, exist_ok=True)
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        # First iteration - loads transcript files
+        first_transcripts = list(session.iter_transcripts())
+        assert session._is_tf_loaded is True
+
+        # Second iteration - uses cached files
+        second_transcripts = list(session.iter_transcripts())
+        assert first_transcripts == second_transcripts
+
+    def test_iter_transcripts_sets_loaded_flag(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        """Test that iteration sets the _is_tf_loaded flag when directory exists."""
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
+
+        # Create directory to trigger _is_tf_loaded flag being set
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        os.makedirs(session_dir, exist_ok=True)
+
+        session = Session(made_project_storage_path_obj, session_id)
+        assert session._is_tf_loaded is False
+
+        _ = list(session.iter_transcripts())
+        assert session._is_tf_loaded is True
+
+
+class TestSessionLazyLoading:
+    """Tests for lazy loading behavior."""
+
+    def test_iter_transcripts_only_loads_once(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that transcript files are only loaded once."""
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text(json.dumps(generate_minimal_user()))
+
+        # Create directory to ensure _is_tf_loaded flag gets set
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        os.makedirs(session_dir, exist_ok=True)
+
+        session = Session(made_project_storage_path_obj, session_id)
+        load_count = 0
+
+        original_load = session._load_transcript_files
+
+        def counting_load() -> None:
+            nonlocal load_count
+            load_count += 1
+            original_load()
+
+        monkeypatch.setattr(session, "_load_transcript_files", counting_load)
+
+        _ = list(session.iter_transcripts())
+        _ = list(session.iter_transcripts())
+        _ = list(session.iter_transcripts())
+
+        assert load_count == 1
+
+    def test_get_tool_result_loads_tool_result_files(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        """Test that getting tool result loads tool result files."""
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        tool_results_dir = os.path.join(session_dir, "tool-results")
+        os.makedirs(tool_results_dir, exist_ok=True)
+
+        tool_result_file = os.path.join(tool_results_dir, "call_test.txt")
+        pathlib.Path(tool_result_file).write_text("result")
+
+        session = Session(made_project_storage_path_obj, session_id)
+        assert session._is_trf_loaded is False
+
+        _ = session.get_tool_result_file_content("call_test")
+        assert session._is_trf_loaded is True
+
+    def test_get_tool_result_only_loads_once(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Test that tool result files are only loaded once."""
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        tool_results_dir = os.path.join(session_dir, "tool-results")
+        os.makedirs(tool_results_dir, exist_ok=True)
+
+        tool_result_file = os.path.join(tool_results_dir, "call_test.txt")
+        pathlib.Path(tool_result_file).write_text("result")
+
+        session = Session(made_project_storage_path_obj, session_id)
+        load_count = 0
+
+        original_load = session._load_tool_result_files
+
+        def counting_load() -> None:
+            nonlocal load_count
+            load_count += 1
+            original_load()
+
+        monkeypatch.setattr(session, "_load_tool_result_files", counting_load)
+
+        _ = session.get_tool_result_file_content("call_test")
+        _ = session.get_tool_result_file_content("call_test")
+        _ = session.get_tool_result_file_content("call_test")
+
+        assert load_count == 1
+
+
+class TestSessionEquality:
+    def test_eq_equal_sessions(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id)
+
+        assert session1 == session2
+
+    def test_eq_different_sessions(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_id2 = uuid.uuid4()
+        session_file1 = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        session_file2 = os.path.join(str(made_project_storage_path_obj), f"{session_id2}.jsonl")
+        pathlib.Path(session_file1).write_text('{"type": "test1"}')
+        pathlib.Path(session_file2).write_text('{"type": "test2"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id2)
+
+        assert session1 != session2
+
+    def test_eq_non_session_object(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session != "not a session"
+        assert session != 123
+
+    def test_eq_reflexive(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+        assert session == session
+
+    def test_eq_symmetric(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id)
+
+        assert session1 == session2
+        assert session2 == session1
+
+    def test_eq_transitive(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id)
+        session3 = Session(made_project_storage_path_obj, session_id)
+
+        assert session1 == session2
+        assert session2 == session3
+        assert session1 == session3
+
+
+class TestSessionHash:
+    def test_hash_equal_sessions_have_same_hash(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id)
+
+        assert hash(session1) == hash(session2)
+
+    def test_hash_different_sessions_have_different_hashes(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_id2 = uuid.uuid4()
+        session_file1 = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        session_file2 = os.path.join(str(made_project_storage_path_obj), f"{session_id2}.jsonl")
+        pathlib.Path(session_file1).write_text('{"type": "test1"}')
+        pathlib.Path(session_file2).write_text('{"type": "test2"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id2)
+
+        assert hash(session1) != hash(session2)
+
+    def test_hash_session_can_be_used_in_set(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id)
+
+        session_set = {session1, session2}
+
+        assert len(session_set) == 1
+
+    def test_hash_session_can_be_used_as_dict_key(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session1 = Session(made_project_storage_path_obj, session_id)
+        session2 = Session(made_project_storage_path_obj, session_id)
+
+        session_dict = {session1: "first", session2: "second"}
+
+        assert len(session_dict) == 1
+        assert session_dict[session1] == "second"
+
+    def test_hash_stability(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        """Test that hash is stable across multiple calls."""
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        hash1 = hash(session)
+        hash2 = hash(session)
+        hash3 = hash(session)
+
+        assert hash1 == hash2 == hash3
+
+
+class TestGetToolResultFileContent:
+    def test_get_tool_result_content_existing(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        tool_results_dir = os.path.join(session_dir, "tool-results")
+        os.makedirs(tool_results_dir, exist_ok=True)
+
+        tool_result_file = os.path.join(tool_results_dir, "call_abc123.txt")
+        expected_content = "This is the tool result content\nwith multiple lines"
+        pathlib.Path(tool_result_file).write_text(expected_content)
+
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+        content = session.get_tool_result_file_content("call_abc123")
+
+        assert content == expected_content
+
+    def test_get_tool_result_content_nonexistent(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+        content = session.get_tool_result_file_content("call_nonexistent")
+
+        assert content is None
+
+    def test_get_tool_result_content_multiple_files(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        tool_results_dir = os.path.join(session_dir, "tool-results")
+        os.makedirs(tool_results_dir, exist_ok=True)
+
+        tool_result_file1 = os.path.join(tool_results_dir, "call_abc123.txt")
+        pathlib.Path(tool_result_file1).write_text("result 1")
+
+        tool_result_file2 = os.path.join(tool_results_dir, "call_def456.txt")
+        pathlib.Path(tool_result_file2).write_text("result 2")
+
+        tool_result_file3 = os.path.join(tool_results_dir, "call_xyz789.txt")
+        pathlib.Path(tool_result_file3).write_text("result 3")
+
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        assert session.get_tool_result_file_content("call_abc123") == "result 1"
+        assert session.get_tool_result_file_content("call_def456") == "result 2"
+        assert session.get_tool_result_file_content("call_xyz789") == "result 3"
+        assert session.get_tool_result_file_content("call_nonexistent") is None
+
+    def test_get_tool_result_content_uses_cache(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        tool_results_dir = os.path.join(session_dir, "tool-results")
+        os.makedirs(tool_results_dir, exist_ok=True)
+
+        tool_result_file = os.path.join(tool_results_dir, "call_abc123.txt")
+        pathlib.Path(tool_result_file).write_text("result content")
+
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+
+        # First call - builds cache
+        content1 = session.get_tool_result_file_content("call_abc123")
+        assert content1 == "result content"
+
+        # Second call - uses cache
+        content2 = session.get_tool_result_file_content("call_abc123")
+        assert content2 == "result content"
+
+    def test_get_tool_result_content_empty_file(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        tool_results_dir = os.path.join(session_dir, "tool-results")
+        os.makedirs(tool_results_dir, exist_ok=True)
+
+        tool_result_file = os.path.join(tool_results_dir, "call_empty.txt")
+        pathlib.Path(tool_result_file).write_text("")
+
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        session = Session(made_project_storage_path_obj, session_id)
+        content = session.get_tool_result_file_content("call_empty")
+
+        assert content == ""
+
+    def test_get_tool_result_content_no_tool_results_directory(
+        self,
+        made_project_storage_path_obj: ProjectStoragePath,
+        session_id: uuid.UUID,
+    ) -> None:
+        """Test that missing tool-results directory returns None and sets loaded flag."""
+        session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
+        pathlib.Path(session_file).write_text('{"type": "test"}')
+
+        # Create session directory to ensure _is_trf_loaded flag gets set
+        session_dir = os.path.join(str(made_project_storage_path_obj), str(session_id))
+        os.makedirs(session_dir, exist_ok=True)
+
+        session = Session(made_project_storage_path_obj, session_id)
+        content = session.get_tool_result_file_content("call_test")
+
+        assert content is None
+        # Flag should be set since directory exists (even if tool-results doesn't)
+        assert session._is_trf_loaded is True
