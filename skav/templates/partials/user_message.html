@@ -1,0 +1,26 @@
+<div class="message user">
+    <div class="message-header">
+        <span class="role-badge user">User</span>
+        <span class="timestamp">{{ message.timestamp|strftime("%Y-%m-%d %H:%M:%S") }}</span>
+    </div>
+    <div class="message-content">
+        {% if message.has_plan %}
+        <!-- Plan Block -->
+        <div class="plan">
+            <div class="plan-header">
+                <span class="plan-icon">📋</span>
+                <span>Plan</span>
+            </div>
+            <div class="plan-content">
+                {{ message.plan_content|safe }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if message.text_html %}
+        <div class="text-content">
+            {{ message.text_html|safe }}
+        </div>
+        {% endif %}
+    </div>
+</div>

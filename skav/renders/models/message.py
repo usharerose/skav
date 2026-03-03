@@ -43,7 +43,7 @@ class Message(BaseModel):
         "user",
     ]
 
-    session_id: uuid.UUID
+    session_id: uuid.UUID | None = None
     message_id: uuid.UUID | None = None
     parent_message_id: uuid.UUID | None = None
     is_sidechain: bool = False

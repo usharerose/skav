@@ -18,6 +18,9 @@ All models use Pydantic for validation and can be instantiated from
 transcript JSON data using model_validate().
 """
 
-from .transcript_items import WrappedTranscriptItem
+from .transcript_items import TranscriptItemType, WrappedTranscriptItem
 
-__all__ = ["WrappedTranscriptItem"]
+__all__ = [
+    "TranscriptItemType",
+    "WrappedTranscriptItem",
+]
