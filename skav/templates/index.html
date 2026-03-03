@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skav Transcript Renderer - Style Demo</title>
+    <style>
+        /* ==================== CSS Variables ==================== */
+        :root {
+            /* Colors */
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d2d;
+            --bg-hover: #37373d;
+
+            --text-primary: #cccccc;
+            --text-secondary: #858585;
+            --text-muted: #6e6e6e;
+
+            --border-color: #3c3c3c;
+            --border-focus: #007acc;
+
+            --user-msg-bg: #0e639c;
+            --user-msg-text: #ffffff;
+
+            --assistant-msg-bg: transparent;
+            --assistant-msg-border: #3c3c3c;
+
+            --tool-bg: #2d2d2d;
+            --tool-border: #4d4d4d;
+            --tool-header-bg: #383838;
+
+            --code-bg: #1e1e1e;
+            --code-border: #3c3c3c;
+
+            --thinking-bg: #2d2d2a;
+            --thinking-border: #4d4d00;
+
+            --success-color: #4ec9b0;
+            --error-color: #f48771;
+            --warning-color: #dcdcaa;
+
+            /* Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 12px;
+            --spacing-lg: 16px;
+            --spacing-xl: 24px;
+
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+        }
+
+        /* ==================== Reset & Base ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* ==================== Layout ==================== */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        .header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header .meta {
+            margin-top: var(--spacing-sm);
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* ==================== Messages ==================== */
+        .message {
+            margin-bottom: var(--spacing-lg);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+            font-size: 12px;
+        }
+
+        .role-badge {
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .role-badge.user {
+            background: var(--user-msg-bg);
+            color: var(--user-msg-text);
+        }
+
+        .role-badge.assistant {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .role-badge.tool {
+            background: var(--tool-header-bg);
+            color: var(--text-secondary);
+        }
+
+        .timestamp {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        /* ==================== User Message ==================== */
+        .message.user {
+            background: var(--user-msg-bg);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            margin-left: 40px;
+        }
+
+        .message.user .message-content {
+            color: var(--user-msg-text);
+        }
+
+        .message.user .timestamp {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .message.user .token-usage {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .message.user .token-usage .model-name {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .message.user .token-usage .token-info {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .message.user .token-usage .token-count {
+            color: #ffffff;
+        }
+
+        .message.user .token-usage .token-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .message.user .token-usage .separator {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ==================== Assistant Message ==================== */
+        .message.assistant {
+            background: var(--assistant-msg-bg);
+            border-left: 3px solid var(--assistant-msg-border);
+            padding-left: var(--spacing-md);
+        }
+
+        .message.assistant .message-content {
+            color: var(--text-primary);
+        }
+
+        /* ==================== Thinking Block ==================== */
+        .thinking {
+            background: var(--thinking-bg);
+            border: 1px solid var(--thinking-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin: var(--spacing-sm) 0;
+        }
+
+        .thinking-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 12px;
+            color: var(--warning-color);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .thinking-icon {
+            font-size: 14px;
+        }
+
+        .thinking-content {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ==================== Tool Use ==================== */
+        .tool-use {
+            background: var(--tool-bg);
+            border: 1px solid var(--tool-border);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-sm) 0;
+            overflow: hidden;
+        }
+
+        .tool-header {
+            background: var(--tool-header-bg);
+            padding: var(--spacing-sm) var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .tool-icon {
+            font-size: 16px;
+        }
+
+        .tool-name {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .tool-description {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        .tool-content {
+            padding: var(--spacing-md);
+        }
+
+        /* Tool specific styles */
+        .tool-use.bash .tool-header {
+            border-left: 3px solid #4ec9b0;
+        }
+
+        .tool-use.read .tool-header {
+            border-left: 3px solid #569cd6;
+        }
+
+        .tool-use.edit .tool-header {
+            border-left: 3px solid #dcdcaa;
+        }
+
+        /* ==================== Code Blocks ==================== */
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-sm) 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: var(--bg-secondary);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--code-border);
+        }
+
+        .code-lang {
+            font-family: 'Consolas', 'Monaco', monospace;
+            text-transform: uppercase;
+        }
+
+        .code-content {
+            padding: var(--spacing-md);
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            margin: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        /* ==================== Tool Result ==================== */
+        .tool-result {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin: var(--spacing-sm) 0;
+        }
+
+        .tool-result.success {
+            border-left: 3px solid var(--success-color);
+        }
+
+        .tool-result.error {
+            border-left: 3px solid var(--error-color);
+        }
+
+        .tool-result-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* ==================== File Edit Diff ==================== */
+        .file-edit {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-sm) 0;
+            overflow: hidden;
+        }
+
+        .file-edit-header {
+            background: var(--tool-header-bg);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .file-path {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: var(--text-secondary);
+        }
+
+        .diff-section {
+            margin: var(--spacing-xs) 0;
+        }
+
+        .diff-header {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .diff-old {
+            background: rgba(244, 135, 113, 0.1);
+        }
+
+        .diff-old .diff-header {
+            color: var(--error-color);
+        }
+
+        .diff-new {
+            background: rgba(78, 201, 176, 0.1);
+        }
+
+        .diff-new .diff-header {
+            color: var(--success-color);
+        }
+
+        .diff-content {
+            padding: var(--spacing-sm);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        /* ==================== Content Blocks ==================== */
+        .text-content {
+            margin: var(--spacing-sm) 0;
+            line-height: 1.6;
+        }
+
+        .text-content p {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .text-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .text-content code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+        }
+
+        .text-content a {
+            color: var(--border-focus);
+            text-decoration: none;
+        }
+
+        .text-content a:hover {
+            text-decoration: underline;
+        }
+
+        /* ==================== Responsive ==================== */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            .message.user {
+                margin-left: 0;
+            }
+
+            .code-content pre {
+                font-size: 12px;
+            }
+        }
+
+        /* ==================== Utility Classes ==================== */
+        .hidden {
+            display: none;
+        }
+
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mt-sm { margin-top: var(--spacing-sm); }
+        .mt-md { margin-top: var(--spacing-md); }
+        .mt-lg { margin-top: var(--spacing-lg); }
+
+        .mb-sm { margin-bottom: var(--spacing-sm); }
+        .mb-md { margin-bottom: var(--spacing-md); }
+        .mb-lg { margin-bottom: var(--spacing-lg); }
+
+        /* ==================== Token Usage ==================== */
+        .token-usage {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: 4px 8px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .token-usage .separator {
+            color: var(--border-color);
+            margin: 0 2px;
+        }
+
+        .token-usage .model-name {
+            color: var(--info-color);
+            font-weight: 600;
+            padding: 2px 6px;
+            background: rgba(55, 148, 255, 0.1);
+            border-radius: var(--radius-sm);
+        }
+
+        .token-usage .token-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            background: rgba(78, 201, 176, 0.1);
+            border-radius: var(--radius-sm);
+        }
+
+        .token-usage .token-count {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .token-usage .token-label {
+            color: var(--text-muted);
+        }
+
+        .token-usage .cache-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+        }
+
+        .token-usage.has-cache .cache-indicator {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .token-details {
+            display: flex;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+            margin-top: var(--space-xs);
+            padding: 4px 8px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+        }
+
+        .token-detail {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+        }
+
+        .token-detail.input .token-count {
+            color: #569cd6;
+        }
+
+        .token-detail.output .token-count {
+            color: #4ec9b0;
+        }
+
+        .token-detail.cache-write .token-count {
+            color: #dcdcaa;
+        }
+
+        .token-detail.cache-read .token-count {
+            color: #c586c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📝 Skav Transcript Renderer</h1>
+            <div class="meta">
+                Session: <code>abc123-def456</code> |
+                Started: <time>2026-03-02 23:19:25</time> |
+                Messages: 12
+            </div>
+        </div>
+
+        <!-- User Message -->
+        <div class="message user">
+            <div class="message-header">
+                <span class="role-badge user">User</span>
+                <span class="timestamp">2026-03-02 23:19:25</span>
+            </div>
+            <div class="message-content">
+                <div class="text-content">
+                    <p>Analyze the project structure and create a README file</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assistant Message with Thinking and Token Usage -->
+        <div class="message assistant">
+            <div class="message-header">
+                <span class="role-badge assistant">Assistant</span>
+                <span class="timestamp">2026-03-02 23:19:26</span>
+                <span class="token-usage">
+                    <span class="model-name">qwen-max</span>
+                    <span class="separator">•</span>
+                    <span class="token-info">
+                        <span class="token-count">1,234</span>
+                        <span class="token-label">tokens</span>
+                    </span>
+                </span>
+            </div>
+            <div class="message-content">
+                <!-- Thinking Block -->
+                <div class="thinking">
+                    <div class="thinking-header">
+                        <span class="thinking-icon">💭</span>
+                        <span>Thinking</span>
+                    </div>
+                    <div class="thinking-content">
+                        User wants to analyze project structure and create README. I need to:<br>
+                        1. Use Glob tool to view project file structure<br>
+                        2. Use Read tool to read key files<br>
+                        3. Then use Write tool to create README
+                    </div>
+                </div>
+
+                <div class="text-content">
+                    <p>I'll help you analyze the project structure and create a README file.</p>
+                </div>
+
+                <!-- Tool Use: Glob -->
+                <div class="tool-use glob">
+                    <div class="tool-header">
+                        <span class="tool-icon">🔍</span>
+                        <span class="tool-name">Glob</span>
+                    </div>
+                    <div class="tool-content">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">JSON</span>
+                            </div>
+                            <div class="code-content">
+                                <pre>{
+  "pattern": "**/*.py",
+  "path": "/project"
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Result -->
+        <div class="message assistant">
+            <div class="message-header">
+                <span class="role-badge tool">Tool Result</span>
+                <span class="timestamp">2026-03-02 23:19:27</span>
+            </div>
+            <div class="message-content">
+                <div class="tool-result success">
+                    <div class="tool-result-content">skav/__init__.py
+skav/app.py
+skav/core/__init__.py
+skav/core/models/__init__.py
+skav/renders/__init__.py</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assistant Message with File Edit and Detailed Token Usage -->
+        <div class="message assistant">
+            <div class="message-header">
+                <span class="role-badge assistant">Assistant</span>
+                <span class="timestamp">2026-03-02 23:19:28</span>
+                <span class="token-usage has-cache">
+                    <span class="model-name">qwen-max</span>
+                    <span class="cache-indicator" title="Cached tokens used"></span>
+                    <span class="separator">•</span>
+                    <span class="token-info">
+                        <span class="token-count">856</span>
+                        <span class="token-label">tokens</span>
+                    </span>
+                    <div class="token-details">
+                        <span class="token-detail input">
+                            <span class="token-label">in:</span>
+                            <span class="token-count">4,521</span>
+                        </span>
+                        <span class="token-detail cache-write">
+                            <span class="token-label">cache:</span>
+                            <span class="token-count">1,234</span>
+                        </span>
+                        <span class="token-detail cache-read">
+                            <span class="token-label">read:</span>
+                            <span class="token-count">3,287</span>
+                        </span>
+                        <span class="token-detail output">
+                            <span class="token-label">out:</span>
+                            <span class="token-count">312</span>
+                        </span>
+                    </div>
+                </span>
+            </div>
+            <div class="message-content">
+                <div class="text-content">
+                    <p>Now I'll create the README file:</p>
+                </div>
+
+                <!-- File Edit -->
+                <div class="file-edit">
+                    <div class="file-edit-header">
+                        <span>📝</span>
+                        <span class="file-path">README.md</span>
+                    </div>
+
+                    <div class="diff-section diff-new">
+                        <div class="diff-header">+ New File</div>
+                        <div class="diff-content"># Skav
+
+Parse and analyze Claude Code transcript data with type-safe models.
+
+## Features
+
+- Type-safe transcript parsing
+- HTML rendering support
+- Session management
+
+## Installation
+
+```bash
+pip install skav
+```
+
+## Usage
+
+```python
+from skav import ProjectWorkspace
+
+workspace = ProjectWorkspace()
+for project in workspace.iter_project_storages():
+    print(project)
+```</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bash Tool Example with Token Usage -->
+        <div class="message assistant">
+            <div class="message-header">
+                <span class="role-badge assistant">Assistant</span>
+                <span class="timestamp">2026-03-02 23:19:29</span>
+                <span class="token-usage">
+                    <span class="model-name">qwen-max</span>
+                    <span class="separator">•</span>
+                    <span class="token-info">
+                        <span class="token-count">234</span>
+                        <span class="token-label">tokens</span>
+                    </span>
+                </span>
+            </div>
+            <div class="message-content">
+                <div class="text-content">
+                    <p>Let's run tests to ensure everything works correctly:</p>
+                </div>
+
+                <div class="tool-use bash">
+                    <div class="tool-header">
+                        <span class="tool-icon">$</span>
+                        <span class="tool-name">Bash</span>
+                        <span class="tool-description">Run pytest tests</span>
+                    </div>
+                    <div class="tool-content">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-lang">BASH</span>
+                            </div>
+                            <div class="code-content">
+                                <pre>python -m pytest tests/ -v</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Result with Error -->
+        <div class="message assistant">
+            <div class="message-header">
+                <span class="role-badge tool">Tool Result</span>
+                <span class="timestamp">2026-03-02 23:19:30</span>
+            </div>
+            <div class="message-content">
+                <div class="tool-result error">
+                    <div class="tool-result-content">ERROR: tests/test_renders.py::test_render_message - AssertionError
+Expected: "User"
+Actual: "user"</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
