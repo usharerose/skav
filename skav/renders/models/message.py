@@ -29,37 +29,34 @@ class ToolUseItem(BaseModel):
 class ToolResultItem(BaseModel):
     content: str
     is_error: bool = False
-    status_class: Literal["error", "success"] = "success"
+    status_class: Literal["error", "success", "progress"] = "success"
+    tool_use_id: str | None = None  # ID of the matching tool_use
 
 
 class Message(BaseModel):
     category: Literal[
         "assistant",
-        "file-history-snapshot",
-        "progress",
-        "queue-operation",
-        "summary",
         "system",
         "user",
     ]
+    type: Literal[
+        "assistant",
+        "progress",
+        "system",
+        "thinking",
+        "tool_result",
+        "tool_use",
+        "user",
+    ]
 
-    session_id: uuid.UUID | None = None
-    message_id: uuid.UUID | None = None
-    parent_message_id: uuid.UUID | None = None
-    is_sidechain: bool = False
-    timestamp: datetime.datetime | None = None
+    session_id: uuid.UUID
+    uuid: uuid.UUID
+    timestamp: datetime.datetime
 
     model: str | None = None
-    total_tokens: int | None = None
+    tokens: int | None = None
 
-    text_html: str | None = None
+    content: str | None = None
 
-    has_thinking: bool = False
-    thinking_text: str | None = None
-    thinking_signature: str | None = None
-
-    has_plan: bool = False
-    plan_content: str | None = None
-
-    tool_uses: list[ToolUseItem] | None = None
+    tool_use: ToolUseItem | None = None
     tool_results: list[ToolResultItem] | None = None
