@@ -22,6 +22,7 @@ Skav parses and analyzes Claude Code transcript data with type-safe Pydantic mod
 - **Validation First**: All transcript data validated on load using Pydantic models
 - **Comprehensive Coverage**: Supports all Claude Code hook events, transcript items, and content types
 - **Error Tolerant**: Logs parsing errors without failing entire sessions
+- **HTML Rendering**: Render sessions as beautiful HTML files for review and sharing
 
 ## Installation
 
@@ -54,6 +55,8 @@ skav --help
 
 ## Quick Start
 
+### Python API
+
 ```python
 from skav.transcripts import ProjectWorkspace, ProjectStoragePath
 
@@ -76,16 +79,35 @@ for item in session.iter_transcripts():
         print(f"Content: {item.content}")
 ```
 
-## Usage as Hook Handler
+### CLI: Render Sessions to HTML
 
-Skav can be used as a Claude Code hook handler:
+Skav includes a command-line tool for rendering Claude Code sessions as HTML files:
 
 ```bash
-# Configure in Claude Code settings
-skav --debug
+# Render a session from current directory
+skav abc123-def4-5678-9abc
+
+# Render a session from a specific project
+skav -p /path/to/project abc123-def4-5678-9abc
+
+# Render with custom output path
+skav abc123-def4 -o session.html
+
+# Render from current directory explicitly
+skav -p . abc123-def4
 ```
 
-The handler reads hook events from stdin and logs structured JSON output.
+**Parameters:**
+- `-p, --project`: Project directory path (default: current directory)
+- `-o, --output`: Output HTML file path (default: `<session_id>.html`)
+- `session_id`: Session UUID to render (required)
+
+**Example Output:**
+The generated HTML file includes:
+- All messages with syntax-highlighted code blocks
+- Tool use cards with inputs and results
+- Thinking process display
+- Session metadata (timestamp, git branch, etc.)
 
 ## Development
 
