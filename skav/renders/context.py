@@ -8,14 +8,13 @@ that holds template rendering data built from Session objects.
 
 import datetime
 import logging
-from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ..transcripts.models.transcript_items import TranscriptItemType
 from ..transcripts.session import Session
+from .compose import compose
 from .models.message import Message
-from .router import route
 
 logger = logging.getLogger(__name__)
 
@@ -55,23 +54,27 @@ class Context(BaseModel):
         Returns:
             Context data container with messages and metadata
         """
-        # Load and sort transcripts by timestamp
         transcripts = cls._load_transcripts(session)
+        first_item: TranscriptItemType | None = None
+        if transcripts:
+            first_item, *_ = transcripts
+        messages = compose(transcripts)
 
-        # Extract session metadata from first item
-        first_item = transcripts[0] if transcripts else None
-
-        # Build messages using View classes
-        messages = cls._build_messages(transcripts, session)
+        # Extract metadata from first item using getattr for type safety
+        start_time = getattr(first_item, "timestamp", None) if first_item else None
+        cwd = getattr(first_item, "cwd", None) if first_item else None
+        git_branch = None
+        if first_item:
+            branch = getattr(first_item, "gitBranch", None)
+            if branch and branch != "HEAD":
+                git_branch = branch
 
         return cls(
             session_id=session.session_id,
-            start_time=first_item.timestamp if first_item else None,
-            message_count=len(transcripts),
-            cwd=first_item.cwd if first_item else None,
-            git_branch=(
-                first_item.gitBranch if first_item and first_item.gitBranch != "HEAD" else None
-            ),
+            start_time=start_time,
+            message_count=len(messages),
+            cwd=cwd,
+            git_branch=git_branch,
             messages=messages,
         )
 
@@ -92,58 +95,3 @@ class Context(BaseModel):
         ]
         transcripts.sort(key=lambda x: x.timestamp)
         return transcripts
-
-    @staticmethod
-    def _build_messages(
-        transcripts: list[TranscriptItemType],
-        session: Session,
-    ) -> list[Message]:
-        """
-        Build Message list from transcripts using router.
-
-        Args:
-            transcripts: List of transcript items
-            session: Session for tool result lookups
-
-        Returns:
-            List of Message Pydantic models
-        """
-        messages = []
-        for item in transcripts:
-            try:
-                view = route(item, session)
-                message = view.to_message()
-                messages.append(message)
-            except ValueError as e:
-                logger.error(f"Error dispatching view for item type {type(item)}: {e}")
-                # Return a fallback message
-                # Get session_id if available
-                session_id = getattr(session, "session_id", None)
-                if session_id:
-                    import uuid
-
-                    session_id = uuid.UUID(str(session_id))
-
-                messages.append(
-                    Message(
-                        session_id=session_id,
-                        category="system",
-                        timestamp=getattr(item, "timestamp", None),
-                        message_id=getattr(item, "uuid", None),
-                        parent_message_id=getattr(item, "parentUuid", None),
-                        is_sidechain=getattr(item, "isSidechain", False),
-                        text_html="<em>Error rendering message</em>",
-                    )
-                )
-        return messages
-
-    def to_template_dict(self) -> dict[str, Any]:
-        """
-        Convert context to dictionary for template rendering.
-
-        This is an alias for model_dump() for clarity.
-
-        Returns:
-            Dictionary with all context fields
-        """
-        return self.model_dump()

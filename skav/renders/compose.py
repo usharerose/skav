@@ -8,19 +8,23 @@ import datetime
 import json
 import logging
 import uuid
+from typing import Literal
 
-from ..transcripts.models.transcript_items import TranscriptItemType
-from .models.message import Message, ToolUseItem, ToolResultItem
-from ..transcripts.models.contents.text import TextContentItem
 from ..transcripts.models.contents.base import FileResultContentDetail
-
+from ..transcripts.models.contents.text import TextContentItem
+from ..transcripts.models.transcript_items import TranscriptItemType
+from .models.message import Message, ToolResultItem, ToolUseItem
 
 logger = logging.getLogger(__name__)
 
+# Type aliases for message categories and types
+MessageCategory = Literal["assistant", "system", "user"]
+MessageType = Literal[
+    "assistant", "progress", "system", "thinking", "tool_result", "tool_use", "user"
+]
 
-def compose(
-    transcript_items: list[TranscriptItemType]
-) -> list[Message]:
+
+def compose(transcript_items: list[TranscriptItemType]) -> list[Message]:
     """Convert transcript items to flattened Message list.
 
     This function processes raw transcript items and produces a flattened
@@ -39,7 +43,7 @@ def compose(
 
     transcript_items = sorted(
         transcript_items,
-        key=lambda item: getattr(item, "timestamp", None)
+        key=lambda item: getattr(item, "timestamp", datetime.datetime.min),
     )
 
     message_index: dict[str, Message] = {}
@@ -70,7 +74,7 @@ def compose(
     return list(message_index.values())
 
 
-def parse_message_category(item: TranscriptItemType) -> tuple[str, str]:
+def parse_message_category(item: TranscriptItemType) -> tuple[MessageCategory, MessageType]:
     message = getattr(item, "message", None)
     contents = getattr(message, "content", []) if message else []
 
@@ -104,7 +108,11 @@ def transform_message(
 
     msg_category, msg_type = parse_message_category(item)
     timestamp = getattr(item, "timestamp", None)
-    session_id = item.sessionId
+
+    # Handle session_id - not all transcript types have sessionId
+    session_id_str = getattr(item, "sessionId", None)
+    if session_id_str is None:
+        return None
 
     content = extract_content(item)
 
@@ -115,8 +123,8 @@ def transform_message(
     return Message(
         category=msg_category,
         type=msg_type,
-        session_id=uuid.UUID(session_id),
-        uuid=uuid.UUID(msg_uuid),
+        session_id=uuid.UUID(session_id_str),
+        uuid=uuid.UUID(str(msg_uuid)),
         timestamp=timestamp or datetime.datetime.now(),
         content=content,
         tool_use=tool_use,
@@ -128,7 +136,7 @@ def extract_content(item: TranscriptItemType) -> str | None:
     message = getattr(item, "message", None)
     if not message:
         return None
-    content: list | str | None = getattr(message, "content", None)
+    content: list[object] | str | None = getattr(message, "content", None)
     if content is None or isinstance(content, str):
         return content
     content_obj, *_ = content
@@ -147,7 +155,7 @@ def extract_tool_use(item: TranscriptItemType) -> ToolUseItem | None:
     message = getattr(item, "message", None)
     if not message:
         return None
-    content: list | str | None = getattr(message, "content", None)
+    content: list[object] | str | None = getattr(message, "content", None)
     if content is None or isinstance(content, str):
         return None
 
@@ -156,9 +164,10 @@ def extract_tool_use(item: TranscriptItemType) -> ToolUseItem | None:
     if content_type != "tool_use":
         return None
 
-    tool_use_id = content_obj.id
-    tool_name = content_obj.name
-    tool_input_json = json.dumps(content_obj.input)
+    tool_use_id = getattr(content_obj, "id", "")
+    tool_name = getattr(content_obj, "name", "")
+    tool_input = getattr(content_obj, "input", {})
+    tool_input_json = json.dumps(tool_input)
 
     return ToolUseItem(
         id=tool_use_id,
@@ -178,7 +187,7 @@ def attach_tool_result_from_item(
     message = getattr(item, "message", None)
     if not message:
         return None
-    content: list | str | None = getattr(message, "content", None)
+    content: list[object] | str | None = getattr(message, "content", None)
     if content is None or isinstance(content, str):
         return None
 
@@ -187,21 +196,25 @@ def attach_tool_result_from_item(
     if content_type != "tool_result":
         return None
 
-    tool_use_id = content_obj.tool_use_id
+    tool_use_id = getattr(content_obj, "tool_use_id", "")
+    content_obj_content = getattr(content_obj, "content", "")
+
     result_content = ""
-    if isinstance(content_obj.content, str):
-        result_content = content_obj.content
-    elif isinstance(content_obj.content, list):
-        first, *_ = content_obj.content
+    if isinstance(content_obj_content, str):
+        result_content = content_obj_content
+    elif isinstance(content_obj_content, list):
+        first, *_ = content_obj_content
         if isinstance(first, TextContentItem):
             result_content = first.text
         elif isinstance(first, FileResultContentDetail):
-            result_content = first.source.data
+            result_content = getattr(first.source, "data", "")
         elif isinstance(first, dict):
             result_content = json.dumps(first)
         else:
             result_content = str(first)
-    is_error = content_obj.is_error if content_obj.is_error is not None else False
+    is_error = getattr(content_obj, "is_error", False)
+    if is_error is None:
+        is_error = False
 
     if tool_use_id not in tool_use_index:
         return None
