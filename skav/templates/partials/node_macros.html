@@ -39,6 +39,16 @@
     {% if message.timestamp %}
     <span class="timestamp">
         {{ message.timestamp|format_timestamp }}
+        {% if message.model is not none or message.tokens is not none %}
+        <span class="message-meta">
+            {% if message.model is not none %}
+            <span class="model-name" title="Model">{{ message.model }}</span>
+            {% endif %}
+            {% if message.tokens is not none %}
+            <span class="token-count" title="Tokens">{{ message.tokens }} tokens</span>
+            {% endif %}
+        </span>
+        {% endif %}
     </span>
     {% endif %}
 </div>

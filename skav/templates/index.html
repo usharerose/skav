@@ -105,6 +105,12 @@
             color: var(--text-primary);
         }
 
+        .header .meta .token-stat {
+            background: rgba(78, 201, 176, 0.2);
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
         /* ==================== Message Layout ==================== */
         .message-tree {
             display: flex;
@@ -142,6 +148,26 @@
             font-size: 11px;
             margin-top: var(--spacing-sm);
             display: block;
+        }
+
+        .message-meta {
+            margin-left: var(--spacing-sm);
+            color: var(--text-secondary);
+        }
+
+        .model-name {
+            background: var(--bg-tertiary);
+            padding: 1px 4px;
+            border-radius: var(--radius-sm);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 10px;
+            color: var(--progress-color);
+            margin-right: var(--spacing-xs);
+        }
+
+        .token-count {
+            font-size: 10px;
+            color: var(--text-secondary);
         }
 
         /* ==================== Alignment (by category) ==================== */
@@ -286,6 +312,9 @@
                 <span>Started: <time>{{ start_time|format_timestamp }}</time></span>
                 {% endif %}
                 <span>Messages: {{ message_count }}</span>
+                {% if tokens is not none %}
+                <span>Total Tokens: <code class="token-stat">{{ tokens }}</code></span>
+                {% endif %}
             </div>
         </div>
 

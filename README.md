@@ -109,6 +109,8 @@ The generated HTML file includes:
 - Thinking process display
 - Session metadata (timestamp, git branch, etc.)
 
+![HTML Rendering Preview](examples/preview.png)
+
 ## Development
 
 ### Using Make (Recommended)

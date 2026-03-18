@@ -40,6 +40,9 @@ class Context(BaseModel):
     cwd: str | None = None
     git_branch: str | None = None
 
+    # Token statistics
+    tokens: int = 0
+
     # Messages list (Pydantic models, not dicts)
     messages: list[Message] = Field(default_factory=list)
 
@@ -69,12 +72,16 @@ class Context(BaseModel):
             if branch and branch != "HEAD":
                 git_branch = branch
 
+        # Calculate total tokens
+        tokens = sum(msg.tokens or 0 for msg in messages)
+
         return cls(
             session_id=session.session_id,
             start_time=start_time,
             message_count=len(messages),
             cwd=cwd,
             git_branch=git_branch,
+            tokens=tokens,
             messages=messages,
         )
 

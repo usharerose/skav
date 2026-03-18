@@ -12,7 +12,7 @@ from typing import Literal
 
 from ..transcripts.models.contents.base import FileResultContentDetail
 from ..transcripts.models.contents.text import TextContentItem
-from ..transcripts.models.transcript_items import TranscriptItemType
+from ..transcripts.models.transcript_items import AssistantTranscriptItem, TranscriptItemType
 from .models.message import Message, ToolResultItem, ToolUseItem
 
 logger = logging.getLogger(__name__)
@@ -120,12 +120,25 @@ def transform_message(
     if msg_type == "tool_use":
         tool_use = extract_tool_use(item)
 
+    # Extract model and usage information from AssistantMessage
+    # Only assistant messages have model and usage information
+    model: str | None = None
+    tokens: int | None = None
+    if isinstance(item, AssistantTranscriptItem):
+        assistant_msg = item.message
+        usage = assistant_msg.usage
+
+        model = assistant_msg.model
+        tokens = usage.input_tokens + usage.output_tokens
+
     return Message(
         category=msg_category,
         type=msg_type,
         session_id=uuid.UUID(session_id_str),
         uuid=uuid.UUID(str(msg_uuid)),
         timestamp=timestamp or datetime.datetime.now(),
+        model=model,
+        tokens=tokens,
         content=content,
         tool_use=tool_use,
         tool_results=[],  # Will be populated during attachment phase
