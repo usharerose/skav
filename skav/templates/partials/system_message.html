@@ -1,0 +1,6 @@
+{# System message #}
+{% if message.content %}
+<div class="content-text">{{ message.content }}</div>
+{% else %}
+<div class="content-text"><em>(system message)</em></div>
+{% endif %}

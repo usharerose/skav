@@ -1,0 +1,6 @@
+{# Assistant message #}
+{% if message.content %}
+<div class="content-text">{{ message.content }}</div>
+{% else %}
+<div class="content-text"><em>(no text content)</em></div>
+{% endif %}

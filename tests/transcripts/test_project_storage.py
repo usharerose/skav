@@ -411,6 +411,9 @@ class TestIterTranscriptItems:
         made_project_storage_path_obj: ProjectStoragePath,
         session_id: uuid.UUID,
     ) -> None:
+        """
+        iter_transcript_items only returns main transcript items
+        """
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
         first_user_uuid = str(uuid.uuid4())
         second_user_uuid = str(uuid.uuid4())
@@ -435,7 +438,7 @@ class TestIterTranscriptItems:
 
         storage = ProjectStorage(made_project_storage_path_obj)
         items = list(storage.iter_transcript_items())
-        assert len(items) == 4
+        assert len(items) == 2
 
     def test_iter_transcript_items_lazy_evaluation(
         self,

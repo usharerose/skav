@@ -1,0 +1,207 @@
+{# Combined tool card: tool_use + tool_results in one card #}
+<div class="tool-card" data-tool-id="{{ message.tool_use.id if message.tool_use else '' }}">
+
+    {# Tool header with collapsible toggle #}
+    <div class="tool-card-header" onclick="toggleToolCard(this)">
+        <span class="tool-card-icon">▼</span>
+        <span class="tool-card-badge">{{ message.tool_use.name if message.tool_use else 'Unknown' }}</span>
+        {% if message.tool_use and message.tool_use.id %}
+        <span class="tool-card-id">{{ message.tool_use.id[:12] }}...</span>
+        {% endif %}
+
+        {# Status indicator #}
+        {% if message.tool_results and message.tool_results|length > 0 %}
+            {% set has_error = message.tool_results|selectattr('is_error', 'equalto', true)|list|length > 0 %}
+            {% if has_error %}
+            <span class="tool-card-status error">Error</span>
+            {% else %}
+            <span class="tool-card-status success">Done</span>
+            {% endif %}
+        {% else %}
+            <span class="tool-card-status pending">Running</span>
+        {% endif %}
+    </div>
+
+    {# Tool card body (collapsible) #}
+    <div class="tool-card-body">
+
+        {# IN section - tool use input #}
+        <div class="tool-section tool-input-section">
+            <div class="tool-section-header">IN</div>
+            {% if message.tool_use and message.tool_use.input_json %}
+            <div class="tool-input-content">{{ message.tool_use.input_json }}</div>
+            {% else %}
+            <div class="tool-input-content" style="color: var(--text-muted); font-style: italic;">(no input)</div>
+            {% endif %}
+        </div>
+
+        {# OUT sections - tool results #}
+        {% if message.tool_results and message.tool_results|length > 0 %}
+            {% for result in message.tool_results %}
+                {% if result.status_class == "progress" %}
+                    <div class="tool-section tool-progress-section">
+                        <div class="tool-section-header">PROGRESS</div>
+                        <div class="progress-item">{{ result.content }}</div>
+                    </div>
+                {% else %}
+                    <div class="tool-section tool-result-section">
+                        <div class="tool-section-header">OUT</div>
+                        {% if result.is_error and result.content %}
+                        <div class="tool-error">
+                            <strong>Error:</strong> {{ result.content }}
+                        </div>
+                        {% elif result.content %}
+                        <div class="tool-result-content">{{ result.content }}</div>
+                        {% else %}
+                        <div class="tool-result-content" style="color: var(--text-muted); font-style: italic;">(empty result)</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+    </div>
+</div>
+
+<style>
+    /* Tool card container */
+    .tool-card {
+        background: var(--tool-bg);
+        border: 1px solid var(--tool-border);
+        border-radius: var(--radius-md);
+        margin: var(--spacing-sm) 0;
+        overflow: hidden;
+        /* Alignment is now controlled by parent .align-assistant */
+    }
+
+    /* Tool card header (always visible) */
+    .tool-card-header {
+        background: var(--tool-header-bg);
+        padding: var(--spacing-sm) var(--spacing-md);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid var(--tool-border);
+        transition: background 0.2s;
+    }
+
+    .tool-card-header:hover {
+        background: #404040;
+    }
+
+    .tool-card-icon {
+        color: var(--text-secondary);
+        font-size: 10px;
+        transition: transform 0.2s;
+    }
+
+    .tool-card.collapsed .tool-card-icon {
+        transform: rotate(-90deg);
+    }
+
+    .tool-card-badge {
+        background: var(--border-focus);
+        color: white;
+        padding: 2px 8px;
+        border-radius: var(--radius-sm);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .tool-card-id {
+        color: var(--text-muted);
+        font-size: 10px;
+        margin-left: auto;
+    }
+
+    .tool-card-status {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+    }
+
+    .tool-card-status.success {
+        background: rgba(78, 201, 176, 0.2);
+        color: var(--success-color);
+    }
+
+    .tool-card-status.error {
+        background: rgba(244, 135, 113, 0.2);
+        color: var(--error-color);
+    }
+
+    .tool-card-status.pending {
+        background: rgba(220, 220, 170, 0.2);
+        color: var(--warning-color);
+    }
+
+    /* Tool card body (collapsible) */
+    .tool-card-body {
+        max-height: 2000px;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+
+    .tool-card.collapsed .tool-card-body {
+        max-height: 0;
+    }
+
+    /* Tool sections */
+    .tool-section {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .tool-section:last-child {
+        border-bottom: none;
+    }
+
+    .tool-section-header {
+        padding: var(--spacing-xs) var(--spacing-md);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .tool-input-content,
+    .tool-result-content {
+        padding: var(--spacing-md);
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        font-size: 13px;
+        color: var(--text-primary);
+        white-space: pre-wrap;
+        overflow-x: auto;
+        background: var(--bg-primary);
+    }
+
+    .tool-error {
+        padding: var(--spacing-sm) var(--spacing-md);
+        color: var(--error-color);
+        font-size: 12px;
+        background: rgba(244, 135, 113, 0.1);
+    }
+
+    .progress-item {
+        padding: var(--spacing-xs) var(--spacing-md);
+        font-size: 12px;
+        color: var(--progress-color);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .progress-item:last-child {
+        border-bottom: none;
+    }
+</style>
+
+<script>
+function toggleToolCard(header) {
+    const card = header.parentElement;
+    card.classList.toggle('collapsed');
+}
+</script>

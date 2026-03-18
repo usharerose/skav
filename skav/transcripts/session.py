@@ -23,6 +23,7 @@ import logging
 import os
 import uuid
 from collections.abc import Iterator
+from typing import cast
 
 from ..constants import TOOL_RESULT_FILE_EXT, TRANSCRIPT_FILE_EXT
 from .models.transcript_items import TranscriptItemType
@@ -64,10 +65,12 @@ class Session:
             session_id = uuid.UUID(session_id)
         self._session_id: uuid.UUID = session_id
 
-        self._transcript_files: set[TranscriptFile] = set()
+        self._transcript_file: TranscriptFile | None = None
         self._is_tf_loaded: bool = False
+        self._subagent_transcript_file_mapping: dict[str, TranscriptFile] = {}
+        self._is_subagent_tfs_loaded: bool = False
         self._tool_result_file_mapping: dict[str, ToolResultFile] = {}
-        self._is_trf_loaded: bool = False
+        self._is_trfs_loaded: bool = False
 
     @property
     def exists(self) -> bool:
@@ -110,18 +113,9 @@ class Session:
             entry_name = f"{entry_name}{TRANSCRIPT_FILE_EXT}"
         return os.path.join(str(self._storage_path), entry_name)
 
-    def _load_transcript_files(self) -> None:
-        """
-        Load all transcript files for the session.
-
-        Loads the main session transcript and all subagent transcripts.
-        This method is idempotent - subsequent calls do nothing.
-
-        :raises FileNotFoundError: If session doesn't exist in storage
-        """
+    def _load_transcript_file(self) -> None:
         if self._is_tf_loaded:
             return
-
         if not self.exists:
             raise FileNotFoundError(
                 f"Session <{self._session_id}> doesn't exist in project storage: {self._storage_path}",
@@ -129,8 +123,16 @@ class Session:
 
         tf_path = self.session_path()
         if os.path.exists(tf_path):
-            tf = TranscriptFile(self.session_path())
-            self._transcript_files.add(tf)
+            self._transcript_file = TranscriptFile(self.session_path())
+        self._is_tf_loaded = True
+
+    def _load_subagent_transcript_files(self) -> None:
+        if self._is_subagent_tfs_loaded:
+            return
+        if not self.exists:
+            raise FileNotFoundError(
+                f"Session <{self._session_id}> doesn't exist in project storage: {self._storage_path}",
+            )
 
         dir_path = self.session_path(is_file=False)
         if not os.path.exists(dir_path):
@@ -142,14 +144,17 @@ class Session:
                 if ext != TRANSCRIPT_FILE_EXT:
                     continue
                 subagent_tf = TranscriptFile(file_path)
-                self._transcript_files.add(subagent_tf)
-        self._is_tf_loaded = True
+                if not subagent_tf.is_subagent:
+                    logger.warning(
+                        f"File under subagents/ is not a subagent transcript: {file_path}",
+                    )
+                agent_id = cast(str, subagent_tf.agent_id)
+                self._subagent_transcript_file_mapping[agent_id] = subagent_tf
+        self._is_subagent_tfs_loaded = True
 
     def iter_transcripts(self) -> Iterator[TranscriptItemType]:
         """
-        Iterate over all transcript items in the session.
-
-        Yields items from the main transcript and all subagent transcripts.
+        Iterate over transcript items in the session from main transcript.
 
         :return: Iterator of transcript items with proper type discrimination
         :rtype: Iterator[TranscriptItemType]
@@ -161,9 +166,39 @@ class Session:
             ...         print(f"Assistant: {item.content}")
         """
         if not self._is_tf_loaded:
-            self._load_transcript_files()
+            self._load_transcript_file()
 
-        for tf in self._transcript_files:
+        yield from cast(TranscriptFile, self._transcript_file)
+
+    def iter_subagent_transcripts(
+        self, agent_id: str | None = None
+    ) -> Iterator[TranscriptItemType]:
+        """
+        Iterate over transcript items in the session from subagent transcripts.
+
+        :param agent_id: Specific agent ID to filter by. If None, returns all subagent items.
+        :type agent_id: str or None
+        :return: Iterator of transcript items with proper type discrimination
+        :rtype: Iterator[TranscriptItemType]
+
+        Example::
+
+            >>> subagents_transcripts = list(session.iter_subagent_transcripts())
+            >>> subagent_transcripts = list(session.iter_subagent_transcripts("agent-abc-123"))
+        """
+        if not self._is_subagent_tfs_loaded:
+            self._load_subagent_transcript_files()
+        tfs: list[TranscriptFile] = []
+        if agent_id is not None:
+            tf: TranscriptFile | None = self._subagent_transcript_file_mapping.get(agent_id)
+            if not tf:
+                logger.warning(f"Agent ID not found: {agent_id}")
+                return
+            tfs.append(tf)
+        else:
+            tfs.extend(self._subagent_transcript_file_mapping.values())
+
+        for tf in tfs:
             yield from tf
 
     def _load_tool_result_files(self) -> None:
@@ -175,7 +210,7 @@ class Session:
 
         :raises FileNotFoundError: If session doesn't exist in storage
         """
-        if self._is_trf_loaded:
+        if self._is_trfs_loaded:
             return
 
         if not self.exists:
@@ -194,7 +229,7 @@ class Session:
                     continue
                 tool_result_file = ToolResultFile(file_path)
                 self._tool_result_file_mapping[tool_result_file.tool_use_id] = tool_result_file
-        self._is_trf_loaded = True
+        self._is_trfs_loaded = True
 
     def __hash__(self) -> int:
         return hash((str(self._storage_path), str(self._session_id)))
@@ -218,10 +253,34 @@ class Session:
         :return: The tool result content, or None if not found
         :rtype: str or None
         """
-        if not self._is_trf_loaded:
+        if not self._is_trfs_loaded:
             self._load_tool_result_files()
 
         trf = self._tool_result_file_mapping.get(tool_use_id, None)
         if trf is not None:
             return trf.content
         return None
+
+    @property
+    def agent_ids(self) -> set[str]:
+        """
+        Get the set of subagent IDs.
+
+        :return: Set of agent IDs (empty set if no subagents)
+        :rtype: set[str]
+        """
+        if not self._is_subagent_tfs_loaded:
+            self._load_subagent_transcript_files()
+        return set(self._subagent_transcript_file_mapping.keys())
+
+    @property
+    def has_subagents(self) -> bool:
+        """
+        Check if this session has any subagent transcripts.
+
+        :return: True if there are subagent transcripts, False otherwise
+        :rtype: bool
+        """
+        if not self._is_subagent_tfs_loaded:
+            self._load_subagent_transcript_files()
+        return len(self._subagent_transcript_file_mapping) > 0

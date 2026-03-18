@@ -90,10 +90,12 @@ class TestSessionInit:
         """Test that initialization creates empty internal state."""
         session = Session(made_project_storage_path_obj, session_id)
 
-        assert session._transcript_files == set()
+        assert session._transcript_file is None
         assert session._is_tf_loaded is False
+        assert session._subagent_transcript_file_mapping == {}
+        assert session._is_subagent_tfs_loaded is False
         assert session._tool_result_file_mapping == {}
-        assert session._is_trf_loaded is False
+        assert session._is_trfs_loaded is False
 
     def test_init_with_invalid_string_session_id(
         self,
@@ -221,6 +223,9 @@ class TestIterTranscripts:
         made_project_storage_path_obj: ProjectStoragePath,
         session_id: uuid.UUID,
     ) -> None:
+        """
+        iter_transcripts only returns main transcript items
+        """
         session_file = os.path.join(str(made_project_storage_path_obj), f"{session_id}.jsonl")
         main_lines = [
             generate_minimal_user(content="main 1"),
@@ -244,8 +249,7 @@ class TestIterTranscripts:
         transcripts = {
             cast(UserTranscriptItem, item).uuid: item for item in session.iter_transcripts()
         }
-
-        assert len(transcripts) == 4
+        assert len(transcripts) == 2
 
     def test_iter_transcripts_empty_session(
         self,
@@ -335,14 +339,14 @@ class TestSessionLazyLoading:
         session = Session(made_project_storage_path_obj, session_id)
         load_count = 0
 
-        original_load = session._load_transcript_files
+        original_load = session._load_transcript_file
 
         def counting_load() -> None:
             nonlocal load_count
             load_count += 1
             original_load()
 
-        monkeypatch.setattr(session, "_load_transcript_files", counting_load)
+        monkeypatch.setattr(session, "_load_transcript_file", counting_load)
 
         _ = list(session.iter_transcripts())
         _ = list(session.iter_transcripts())
@@ -364,10 +368,10 @@ class TestSessionLazyLoading:
         pathlib.Path(tool_result_file).write_text("result")
 
         session = Session(made_project_storage_path_obj, session_id)
-        assert session._is_trf_loaded is False
+        assert session._is_trfs_loaded is False
 
         _ = session.get_tool_result_file_content("call_test")
-        assert session._is_trf_loaded is True
+        assert session._is_trfs_loaded is True
 
     def test_get_tool_result_only_loads_once(
         self,
@@ -692,4 +696,4 @@ class TestGetToolResultFileContent:
 
         assert content is None
         # Flag should be set since directory exists (even if tool-results doesn't)
-        assert session._is_trf_loaded is True
+        assert session._is_trfs_loaded is True
