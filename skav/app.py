@@ -102,22 +102,29 @@ def main(args: argparse.Namespace) -> int:
     """
     config_logging(service_name="skav", debug=False)
 
-    storage_path = ProjectStoragePath.encode(args.project_path)
-    project_storage = ProjectStorage(storage_path)
-    session = project_storage.get_session(args.session_id)
-    if session is None:
-        logger.error(f"Session not found in {storage_path}: {args.session_id}")
+    try:
+        storage_path = ProjectStoragePath.encode(args.project_path)
+        project_storage = ProjectStorage(storage_path)
+        session = project_storage.get_session(args.session_id)
+        if session is None:
+            logger.error(f"Session not found in {storage_path}: {args.session_id}")
+            return 1
+
+        output_path = f"{args.session_id}.html"
+        if args.output_path is not None:
+            output_path = args.output_path
+        output_path = normalize_path(output_path)
+
+        renderer = HTMLRenderer()
+        renderer.render_to_file(session, output_path)
+        logger.info(f"Successfully rendered session to {output_path}")
+        return 0
+    except FileNotFoundError as e:
+        logger.exception(f"Failed to render session: {e}")
         return 1
-
-    output_path = f"{args.session_id}.html"
-    if args.output_path is not None:
-        output_path = args.output_path
-    output_path = normalize_path(output_path)
-
-    renderer = HTMLRenderer()
-    renderer.render_to_file(session, output_path)
-    logger.info(f"Successfully rendered session to {output_path}")
-    return 0
+    except Exception as e:
+        logger.exception(f"Failed to render session: {e}")
+        return 1
 
 
 def cli() -> None:
