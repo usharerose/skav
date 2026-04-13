@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "skav"}]
 
 [tool.poetry.scripts]
-skav = "skav.app:cli"
+skav = "skav.cli:cli"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
@@ -15,6 +15,7 @@ pydantic = ">=2.12"
 typing-extensions = { version = "4.15.0", python = "<3.11" }
 Jinja2 = ">=3.1"
 Markdown = ">=3.5"
+platformdirs = ">=4.7"
 
 
 [tool.poetry.group.dev.dependencies]
